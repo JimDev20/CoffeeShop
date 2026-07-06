@@ -13,17 +13,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
-          const { db } = await import("@/lib/db");
-          const schema = await import("@/lib/db/schema");
-          const { eq } = await import("drizzle-orm");
+          const { sql } = await import("@/lib/db");
           const bcrypt = await import("bcryptjs");
 
-          const [user] = await db
-            .select()
-            .from(schema.users)
-            .where(eq(schema.users.email, credentials.email as string))
-            .limit(1);
-
+          const rows = await sql`SELECT * FROM users WHERE email = ${credentials.email} LIMIT 1`;
+          const user = rows[0];
           if (!user || !user.password) return null;
 
           const isValid = await bcrypt.compare(credentials.password as string, user.password);
