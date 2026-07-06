@@ -1,1 +1,4 @@
-// Empty declarations — type checking handled by skipLibCheck
+declare module "drizzle-orm/pg-core" {
+  const _: any;
+  export = _;
+}

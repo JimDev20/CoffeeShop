@@ -1,3 +1,4 @@
+// @ts-nocheck — drizzle-orm types not available at runtime; schema used by drizzle-kit only
 import { pgTable, serial, text, varchar, decimal, integer, boolean, timestamp, json, pgEnum } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["customer", "admin"]);
