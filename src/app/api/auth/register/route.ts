@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import sql from "@/lib/db";
-import bcrypt from "bcryptjs";
+import { AuthService } from "@/services/AuthService";
+
+const authService = new AuthService();
 
 export async function POST(request: Request) {
   try {
@@ -11,22 +12,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "name, email, and password are required" }, { status: 400 });
     }
 
-    const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
-    if (existing.length > 0) {
+    const existing = await authService.findByEmail(email);
+    if (existing) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const [user] = await sql`
-      INSERT INTO users (name, email, password, role)
-      VALUES (${name}, ${email}, ${hashedPassword}, 'customer')
-      RETURNING id, name, email, role, created_at
-    `;
-
+    const user = await authService.register({ name, email, password });
     return NextResponse.json({ user }, { status: 201 });
-  } catch (error) {
-    console.error("Registration error:", error);
+  } catch {
     return NextResponse.json({ error: "Registration failed" }, { status: 400 });
   }
 }

@@ -6,7 +6,7 @@ import { Package } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
-interface Order {
+interface OrderRow {
   id: number;
   customer_name: string;
   customer_email: string;
@@ -24,9 +24,22 @@ const statusStyles: Record<string, "default" | "warning" | "success" | "secondar
   cancelled: "destructive",
 };
 
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString();
+}
+
+function itemCount(items: string): number {
+  try {
+    const parsed = JSON.parse(items);
+    return Array.isArray(parsed) ? parsed.length : 1;
+  } catch {
+    return 1;
+  }
+}
+
 export default function OrdersPage() {
   const { data: session } = useSession();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,7 +48,7 @@ export default function OrdersPage() {
         const res = await fetch("/api/orders");
         const data = await res.json();
         const userOrders = data.orders?.filter(
-          (o: Order) => o.customer_email === session?.user?.email
+          (o: OrderRow) => o.customer_email === session?.user?.email
         ) || [];
         setOrders(userOrders);
       } catch {
@@ -52,11 +65,7 @@ export default function OrdersPage() {
   }, [session]);
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-12 text-center text-stone-500">
-        Loading orders...
-      </div>
-    );
+    return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading orders...</div>;
   }
 
   return (
@@ -67,34 +76,29 @@ export default function OrdersPage() {
         <p className="text-stone-400 text-center py-16">No orders found.</p>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => {
-            let itemCount = 0;
-            try { const parsed = JSON.parse(order.items); itemCount = Array.isArray(parsed) ? parsed.length : 1; } catch { itemCount = 1; }
-            const date = new Date(order.created_at).toLocaleDateString();
-            return (
-              <Card key={order.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                        <Package className="h-6 w-6 text-amber-700" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-stone-800">Order #{order.id}</p>
-                        <p className="text-sm text-stone-500">{date} &middot; {itemCount} item(s)</p>
-                      </div>
+          {orders.map((order) => (
+            <Card key={order.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                      <Package className="h-6 w-6 text-amber-700" />
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-amber-800">₱{Number(order.total).toLocaleString()}</p>
-                      <Badge variant={statusStyles[order.status] || "secondary"} className="mt-1">
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
+                    <div>
+                      <p className="font-semibold text-stone-800">Order #{order.id}</p>
+                      <p className="text-sm text-stone-500">{formatDate(order.created_at)} &middot; {itemCount(order.items)} item(s)</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  <div className="text-right">
+                    <p className="font-bold text-amber-800">\u20B1{Number(order.total).toLocaleString()}</p>
+                    <Badge variant={statusStyles[order.status] || "secondary"} className="mt-1">
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>

@@ -1,49 +1,41 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coffee, Users, ShoppingCart, DollarSign } from "lucide-react";
 import Link from "next/link";
-import sql from "@/lib/db";
+import { OrderService } from "@/services/OrderService";
+import { CustomerService } from "@/services/CustomerService";
+import { ProductService } from "@/services/ProductService";
 
-interface Stats {
-  revenue: string;
-  orders: number;
-  customers: number;
-  products: number;
-}
+class AdminStatsService {
+  private orderService = new OrderService();
+  private customerService = new CustomerService();
+  private productService = new ProductService();
 
-async function getStats(): Promise<Stats> {
-  try {
-    const [revResult, ordResult, custResult, prodResult] = await Promise.all([
-      sql`SELECT COALESCE(SUM(CAST(total AS numeric)), 0) as total FROM orders WHERE status != 'cancelled'`,
-      sql`SELECT COUNT(*) as count FROM orders`,
-      sql`SELECT COUNT(*) as count FROM users WHERE role = 'customer'`,
-      sql`SELECT COUNT(*) as count FROM products WHERE is_available = true`,
+  async getAll() {
+    const [revenue, orders, customers, products] = await Promise.all([
+      this.orderService.getTotalRevenue(),
+      this.orderService.getCount(),
+      this.customerService.getCount(),
+      this.productService.getAvailableCount(),
     ]);
-
-    return {
-      revenue: `₱${Number(revResult[0]?.total || 0).toLocaleString()}`,
-      orders: Number(ordResult[0]?.count || 0),
-      customers: Number(custResult[0]?.count || 0),
-      products: Number(prodResult[0]?.count || 0),
-    };
-  } catch {
-    return { revenue: "₱0", orders: 0, customers: 0, products: 0 };
+    return { revenue, orders, customers, products };
   }
 }
 
+const adminLinks = [
+  { href: "/admin/products", label: "Manage Products", desc: "Add, edit, or remove products" },
+  { href: "/admin/orders", label: "Manage Orders", desc: "View and update order status" },
+  { href: "/admin/customers", label: "Manage Customers", desc: "View customer information" },
+];
+
 export default async function AdminPage() {
-  const stats = await getStats();
+  const statsService = new AdminStatsService();
+  const stats = await statsService.getAll();
 
   const statCards = [
-    { icon: DollarSign, label: "Total Revenue", value: stats.revenue, color: "text-green-600", bg: "bg-green-100" },
+    { icon: DollarSign, label: "Total Revenue", value: `\u20B1${stats.revenue.toLocaleString()}`, color: "text-green-600", bg: "bg-green-100" },
     { icon: ShoppingCart, label: "Total Orders", value: String(stats.orders), color: "text-amber-600", bg: "bg-amber-100" },
     { icon: Users, label: "Customers", value: String(stats.customers), color: "text-blue-600", bg: "bg-blue-100" },
     { icon: Coffee, label: "Products", value: String(stats.products), color: "text-stone-600", bg: "bg-stone-100" },
-  ];
-
-  const adminLinks = [
-    { href: "/admin/products", label: "Manage Products", desc: "Add, edit, or remove products" },
-    { href: "/admin/orders", label: "Manage Orders", desc: "View and update order status" },
-    { href: "/admin/customers", label: "Manage Customers", desc: "View customer information" },
   ];
 
   return (

@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import sql from "@/lib/db";
+import { CategoryService } from "@/services/CategoryService";
+
+const categoryService = new CategoryService();
 
 export async function GET() {
   try {
-    const categories = await sql`
-      SELECT * FROM categories WHERE is_active = true ORDER BY sort_order, name
-    `;
+    const categories = await categoryService.getAllActive();
     return NextResponse.json({ categories });
-  } catch (error) {
-    console.error("Failed to fetch categories:", error);
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

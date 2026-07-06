@@ -1,32 +1,13 @@
-import sql from "@/lib/db";
+import { ProductService } from "@/services/ProductService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Coffee, Edit, Plus, Trash2 } from "lucide-react";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  stock: number;
-  is_available: boolean;
-  category_name: string | null;
-}
+const productService = new ProductService();
 
 export default async function AdminProductsPage() {
-  let products: Product[] = [];
-
-  try {
-    const result = await sql`
-      SELECT p.*, c.name as category_name
-      FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      ORDER BY p.name
-    `;
-    products = result as unknown as Product[];
-  } catch (e) {
-    console.error("Failed to load products:", e);
-  }
+  let products = await productService.getAll().catch(() => []);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -41,9 +22,7 @@ export default async function AdminProductsPage() {
       </div>
 
       <div className="space-y-3">
-        {products.length === 0 && (
-          <p className="text-stone-400 text-center py-8">No products yet.</p>
-        )}
+        {products.length === 0 && <p className="text-stone-400 text-center py-8">No products yet.</p>}
         {products.map((product) => (
           <Card key={product.id}>
             <CardContent className="p-4 flex items-center gap-4">
@@ -55,7 +34,7 @@ export default async function AdminProductsPage() {
                 <p className="text-sm text-stone-500">{product.category_name || "Uncategorized"}</p>
               </div>
               <div className="text-right">
-                <p className="font-bold text-amber-800">₱{Number(product.price).toLocaleString()}</p>
+                <p className="font-bold text-amber-800">\u20B1{Number(product.price).toLocaleString()}</p>
                 <p className="text-xs text-stone-500">Stock: {product.stock}</p>
               </div>
               <Badge variant={product.is_available ? "success" : "destructive"}>

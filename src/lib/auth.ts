@@ -1,7 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import sql from "@/lib/db";
-import bcrypt from "bcryptjs";
+import { AuthService } from "@/services/AuthService";
+
+const authService = new AuthService();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -16,16 +17,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const rows = await sql`
-          SELECT * FROM users WHERE email = ${credentials.email}
-        `;
+        const user = await authService.validateCredentials(
+          credentials.email as string,
+          credentials.password as string
+        );
 
-        if (!rows.length) return null;
-
-        const user = rows[0] as { id: number; name: string; email: string; password: string; role: string };
-
-        const isValid = await bcrypt.compare(credentials.password as string, user.password);
-        if (!isValid) return null;
+        if (!user) return null;
 
         return {
           id: String(user.id),
@@ -52,11 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/auth/login",
-  },
+  session: { strategy: "jwt" },
+  pages: { signIn: "/auth/login" },
   secret: process.env.AUTH_SECRET,
 });
