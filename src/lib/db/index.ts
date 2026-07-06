@@ -1,13 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import * as schema from "./schema";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const connectionString = process.env.DATABASE_URL!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Supabase credentials not configured. Using demo data.");
+if (!connectionString) {
+  console.warn("DATABASE_URL not configured. Database features will be unavailable.");
 }
 
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-key"
-);
+const sql = neon(connectionString || "postgres://placeholder");
+
+export const db = drizzle(sql, { schema });

@@ -11,7 +11,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        return null;
+
+        try {
+          const { db } = await import("@/lib/db");
+          const schema = await import("@/lib/db/schema");
+          const { eq } = await import("drizzle-orm");
+          const bcrypt = await import("bcryptjs");
+
+          const [user] = await db
+            .select()
+            .from(schema.users)
+            .where(eq(schema.users.email, credentials.email as string))
+            .limit(1);
+
+          if (!user || !user.password) return null;
+
+          const isValid = await bcrypt.compare(credentials.password as string, user.password);
+          if (!isValid) return null;
+
+          return {
+            id: String(user.id),
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+          };
+        } catch {
+          return null;
+        }
       },
     }),
   ],

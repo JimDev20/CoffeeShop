@@ -8,7 +8,7 @@ declare module "drizzle-orm/pg-core" {
   export = _;
 }
 
-declare module "drizzle-orm/postgres-js" {
+declare module "drizzle-orm/neon-http" {
   const _: any;
   export = _;
 }
