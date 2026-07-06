@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Coffee, Truck, HeadphonesIcon, Award } from "lucide-react";
-import Image from "next/image";
 
 const categories = [
   { name: "Coffee Beans", slug: "coffee-beans", image: "/img/category-beans.jpg", desc: "Single origin & blends" },
@@ -22,7 +21,7 @@ export default function HomePage() {
   return (
     <>
       <section className="relative bg-gradient-to-br from-amber-900 via-amber-800 to-stone-900 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/img/hero-bg.jpg')] bg-cover bg-center opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-950/50 to-stone-900/50 opacity-30" />
         <div className="container mx-auto px-4 py-24 md:py-36 relative z-10">
           <div className="max-w-2xl">
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">

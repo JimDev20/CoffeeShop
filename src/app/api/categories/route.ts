@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-
-const categories = [
-  { id: 1, name: "Coffee Beans", slug: "coffee-beans", description: "Single origin & blended beans" },
-  { id: 2, name: "Ground Coffee", slug: "ground-coffee", description: "Pre-ground for convenience" },
-  { id: 3, name: "Capsules", slug: "capsules", description: "Compatible with all machines" },
-  { id: 4, name: "Accessories", slug: "accessories", description: "Brew like a pro" },
-];
+import sql from "@/lib/db";
 
 export async function GET() {
-  return NextResponse.json({ categories });
+  try {
+    const categories = await sql`
+      SELECT * FROM categories WHERE is_active = true ORDER BY sort_order, name
+    `;
+    return NextResponse.json({ categories });
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

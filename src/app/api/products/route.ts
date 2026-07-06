@@ -1,41 +1,40 @@
 import { NextResponse } from "next/server";
+import sql from "@/lib/db";
 
-const products = [
-  { id: 1, name: "Ethiopian Yirgacheffe", slug: "ethiopian-yirgacheffe", category: "Coffee Beans", price: 450, desc: "Floral, fruity, wine-like", stock: 50, available: true, featured: true },
-  { id: 2, name: "Colombian Supremo", slug: "colombian-supremo", category: "Coffee Beans", price: 420, desc: "Caramel, nutty, smooth", stock: 35, available: true, featured: true },
-  { id: 3, name: "Dark Roast Espresso", slug: "dark-roast-espresso", category: "Coffee Beans", price: 380, desc: "Bold, chocolate, rich", stock: 40, available: true, featured: false },
-  { id: 4, name: "Breakfast Blend", slug: "breakfast-blend", category: "Ground Coffee", price: 350, desc: "Balanced, bright, medium", stock: 25, available: true, featured: false },
-  { id: 5, name: "French Roast", slug: "french-roast", category: "Ground Coffee", price: 370, desc: "Smoky, intense, dark", stock: 20, available: true, featured: false },
-  { id: 6, name: "Espresso Capsules x10", slug: "espresso-capsules", category: "Capsules", price: 280, desc: "Compatible with Nespresso", stock: 100, available: true, featured: false },
-  { id: 7, name: "Ceramic Pour Over", slug: "ceramic-pour-over", category: "Accessories", price: 650, desc: "Handcrafted ceramic dripper", stock: 15, available: true, featured: false },
-  { id: 8, name: "Coffee Grinder Pro", slug: "coffee-grinder-pro", category: "Accessories", price: 1200, desc: "Adjustable burr grinder", stock: 10, available: true, featured: false },
-];
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const category = searchParams.get("category");
-  const slug = searchParams.get("slug");
-
-  let result = products;
-
-  if (category) {
-    result = result.filter((p) => p.category.toLowerCase() === category.toLowerCase());
+export async function GET() {
+  try {
+    const products = await sql`
+      SELECT p.*, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.is_available = true
+      ORDER BY p.name
+    `;
+    return NextResponse.json({ products });
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  if (slug) {
-    result = result.filter((p) => p.slug === slug);
-  }
-
-  return NextResponse.json({ products: result });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const newProduct = { id: products.length + 1, ...body };
-    products.push(newProduct);
-    return NextResponse.json({ product: newProduct }, { status: 201 });
-  } catch {
+    const { name, slug, description, price, category_id, image, stock, is_available, is_featured, weight, origin, roast_level } = body;
+
+    if (!name || !slug || !price) {
+      return NextResponse.json({ error: "name, slug, and price are required" }, { status: 400 });
+    }
+
+    const [product] = await sql`
+      INSERT INTO products (name, slug, description, price, category_id, image, stock, is_available, is_featured, weight, origin, roast_level)
+      VALUES (${name}, ${slug}, ${description || null}, ${price}, ${category_id || null}, ${image || null}, ${stock || 0}, ${is_available ?? true}, ${is_featured ?? false}, ${weight || null}, ${origin || null}, ${roast_level || null})
+      RETURNING *
+    `;
+
+    return NextResponse.json({ product }, { status: 201 });
+  } catch (error) {
+    console.error("Failed to create product:", error);
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }

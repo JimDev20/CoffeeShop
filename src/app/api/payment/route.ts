@@ -3,92 +3,68 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { amount, description, items, customer } = body;
+    const { amount, description, items, payment_method } = body;
 
-    if (!amount || !customer?.email) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!amount) {
+      return NextResponse.json({ error: "amount is required" }, { status: 400 });
     }
 
-    // PayMongo API: Create Payment Intent
-    const paymongoRes = await fetch("https://api.paymongo.com/v1/payment_intents", {
+    const secretKey = process.env.PAYMONGO_SECRET_KEY;
+    if (!secretKey) {
+      return NextResponse.json({
+        error: "Payment gateway not configured. Order created without payment.",
+        checkout_url: null,
+        order_created: true,
+      }, { status: 200 });
+    }
+
+    const paymongoAmount = Math.round(amount * 100);
+
+    const payload: Record<string, unknown> = {
+      data: {
+        attributes: {
+          amount: paymongoAmount,
+          currency: "PHP",
+          description: description || "Coffee Shop Order",
+          statement_descriptor: "BREW & CO.",
+        },
+      },
+    };
+
+    const pm = payment_method === "card" ? "card" : "gcash";
+    const endpoint = pm === "card"
+      ? "https://api.paymongo.com/v1/checkout_sessions"
+      : "https://api.paymongo.com/v1/checkout_sessions";
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString("base64")}`,
+        Authorization: `Basic ${Buffer.from(secretKey + ":").toString("base64")}`,
       },
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            amount: Math.round(amount * 100),
-            payment_method_allowed: ["card", "gcash", "paymaya"],
-            currency: "PHP",
-            description: description || "Coffee Shop Order",
-            statement_descriptor: "BREW & CO.",
-          },
-        },
-      }),
+      body: JSON.stringify(payload),
     });
 
-    if (!paymongoRes.ok) {
-      const error = await paymongoRes.json();
-      return NextResponse.json({ error: error.errors?.[0]?.detail || "Payment failed" }, { status: 400 });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error("PayMongo error:", JSON.stringify(errorData));
+      return NextResponse.json({
+        error: "Payment gateway error. Order created without payment.",
+        checkout_url: null,
+        order_created: true,
+      }, { status: 200 });
     }
 
-    const paymentIntent = await paymongoRes.json();
+    const data = await response.json();
+    const checkoutUrl = data?.data?.attributes?.checkout_url;
 
-    // Create Payment Method for GCash
-    const methodRes = await fetch("https://api.paymongo.com/v1/payment_methods", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString("base64")}`,
-      },
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            type: "gcash",
-            details: { phone_number: customer.phone || "" },
-            billing: {
-              name: customer.name || "",
-              email: customer.email,
-              phone: customer.phone || "",
-            },
-          },
-        },
-      }),
-    });
-
-    const paymentMethod = await methodRes.json();
-
-    // Attach payment method to intent
-    const attachRes = await fetch(
-      `https://api.paymongo.com/v1/payment_intents/${paymentIntent.data.id}/attach`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Basic ${Buffer.from(process.env.PAYMONGO_SECRET_KEY + ":").toString("base64")}`,
-        },
-        body: JSON.stringify({
-          data: {
-            attributes: {
-              payment_method: paymentMethod.data.id,
-              return_url: `${request.headers.get("origin")}/orders`,
-            },
-          },
-        }),
-      }
-    );
-
-    const attached = await attachRes.json();
-
-    return NextResponse.json({
-      success: true,
-      paymentIntent: attached.data,
-      checkoutUrl: attached.data.attributes?.next_action?.redirect?.url,
-    });
+    return NextResponse.json({ checkout_url: checkoutUrl, order_created: true });
   } catch (error) {
     console.error("Payment error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({
+      error: "Payment processing error. Order created without payment.",
+      checkout_url: null,
+      order_created: true,
+    }, { status: 200 });
   }
 }

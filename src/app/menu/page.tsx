@@ -1,21 +1,38 @@
+import sql from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Coffee, Plus } from "lucide-react";
 import Link from "next/link";
 
-const products = [
-  { id: 1, name: "Ethiopian Yirgacheffe", category: "Coffee Beans", price: 450, slug: "ethiopian-yirgacheffe", desc: "Floral, fruity, wine-like", badge: "Best Seller" },
-  { id: 2, name: "Colombian Supremo", category: "Coffee Beans", price: 420, slug: "colombian-supremo", desc: "Caramel, nutty, smooth", badge: "Popular" },
-  { id: 3, name: "Dark Roast Espresso", category: "Coffee Beans", price: 380, slug: "dark-roast-espresso", desc: "Bold, chocolate, rich", badge: null },
-  { id: 4, name: "Breakfast Blend", category: "Ground Coffee", price: 350, slug: "breakfast-blend", desc: "Balanced, bright, medium", badge: "New" },
-  { id: 5, name: "French Roast", category: "Ground Coffee", price: 370, slug: "french-roast", desc: "Smoky, intense, dark", badge: null },
-  { id: 6, name: "Espresso Capsules x10", category: "Capsules", price: 280, slug: "espresso-capsules", desc: "Compatible with Nespresso", badge: null },
-  { id: 7, name: "Ceramic Pour Over", category: "Accessories", price: 650, slug: "ceramic-pour-over", desc: "Handcrafted ceramic dripper", badge: null },
-  { id: 8, name: "Coffee Grinder Pro", category: "Accessories", price: 1200, slug: "coffee-grinder-pro", desc: "Adjustable burr grinder", badge: "Sale" },
-];
+interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: number;
+  category_name: string | null;
+  image: string | null;
+  weight: string | null;
+  is_featured: boolean;
+}
 
-export default function MenuPage() {
+export default async function MenuPage() {
+  let products: Product[] = [];
+
+  try {
+    const result = await sql`
+      SELECT p.*, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.is_available = true
+      ORDER BY p.name
+    `;
+    products = result as unknown as Product[];
+  } catch (e) {
+    console.error("Failed to load products:", e);
+  }
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="text-center mb-12">
@@ -26,25 +43,30 @@ export default function MenuPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {products.length === 0 && (
+          <p className="col-span-full text-center text-stone-400 py-16">No products available yet.</p>
+        )}
         {products.map((product) => (
           <Card key={product.id} className="group overflow-hidden hover:shadow-lg transition-all">
             <div className="aspect-square bg-stone-100 relative overflow-hidden flex items-center justify-center">
               <Coffee className="h-20 w-20 text-stone-300 group-hover:text-amber-700/40 transition-colors" />
-              {product.badge && (
-                <Badge className="absolute top-3 right-3">{product.badge}</Badge>
+              {product.is_featured && (
+                <Badge className="absolute top-3 right-3">Featured</Badge>
               )}
             </div>
             <CardContent className="p-4">
-              <p className="text-xs text-stone-500 mb-1">{product.category}</p>
+              <p className="text-xs text-stone-500 mb-1">{product.category_name || "Uncategorized"}</p>
               <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors">
                 {product.name}
               </h3>
-              <p className="text-sm text-stone-500 mt-1">{product.desc}</p>
+              <p className="text-sm text-stone-500 mt-1">{product.description}</p>
               <div className="flex items-center justify-between mt-3">
-                <span className="text-lg font-bold text-amber-800">₱{product.price}</span>
-                <Button size="sm" className="bg-amber-700 hover:bg-amber-800">
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
+                <span className="text-lg font-bold text-amber-800">₱{Number(product.price).toLocaleString()}</span>
+                <Link href={`/menu/${product.slug}`}>
+                  <Button size="sm" className="bg-amber-700 hover:bg-amber-800">
+                    <Plus className="h-4 w-4 mr-1" /> Add
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

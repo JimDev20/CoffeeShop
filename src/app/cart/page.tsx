@@ -7,19 +7,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 
-const initialItems = [
-  { id: 1, name: "Ethiopian Yirgacheffe", price: 450, quantity: 1, image: null },
-  { id: 2, name: "Espresso Capsules x10", price: 280, quantity: 2, image: null },
-];
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string | null;
+}
 
 export default function CartPage() {
-  const [items, setItems] = useState(initialItems);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const { data: session } = useSession();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [name, setName] = useState(session?.user?.name || "");
+  const [email, setEmail] = useState(session?.user?.email || "");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [error, setError] = useState("");
 
   const updateQty = (id: number, delta: number) => {
     setItems((prev) =>
@@ -36,6 +43,63 @@ export default function CartPage() {
   };
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleCheckout = async () => {
+    if (!name || !email || !address) {
+      setError("Please fill in name, email, and delivery address.");
+      return;
+    }
+    if (items.length === 0) {
+      setError("Your cart is empty.");
+      return;
+    }
+    setCheckingOut(true);
+    setError("");
+
+    try {
+      const orderRes = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name: name,
+          customer_email: email,
+          customer_phone: phone,
+          shipping_address: address,
+          notes,
+          items: items.map((i) => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
+          total,
+        }),
+      });
+
+      if (!orderRes.ok) {
+        const errData = await orderRes.json();
+        throw new Error(errData.error || "Failed to create order");
+      }
+
+      const payRes = await fetch("/api/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: total,
+          description: `Coffee Shop Order - ${name}`,
+          items: items.map((i) => ({ name: i.name, quantity: i.quantity, amount: i.price })),
+        }),
+      });
+
+      const payData = await payRes.json();
+
+      if (payData.checkout_url) {
+        window.location.href = payData.checkout_url;
+      } else {
+        setItems([]);
+        alert("Order placed successfully! We will contact you for payment.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Checkout failed. Please try again.");
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -110,8 +174,15 @@ export default function CartPage() {
                   <Textarea placeholder="Order Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
 
-                <Button className="w-full bg-amber-700 hover:bg-amber-800" size="lg">
-                  Proceed to Checkout
+                {error && <p className="text-sm text-red-500">{error}</p>}
+
+                <Button
+                  className="w-full bg-amber-700 hover:bg-amber-800"
+                  size="lg"
+                  onClick={handleCheckout}
+                  disabled={checkingOut}
+                >
+                  {checkingOut ? "Processing..." : "Proceed to Checkout"}
                 </Button>
               </CardContent>
             </Card>

@@ -1,21 +1,51 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coffee, Users, ShoppingCart, DollarSign } from "lucide-react";
 import Link from "next/link";
+import sql from "@/lib/db";
 
-const stats = [
-  { icon: DollarSign, label: "Total Revenue", value: "₱45,230", color: "text-green-600", bg: "bg-green-100" },
-  { icon: ShoppingCart, label: "Total Orders", value: "156", color: "text-amber-600", bg: "bg-amber-100" },
-  { icon: Users, label: "Customers", value: "128", color: "text-blue-600", bg: "bg-blue-100" },
-  { icon: Coffee, label: "Products", value: "24", color: "text-stone-600", bg: "bg-stone-100" },
-];
+interface Stats {
+  revenue: string;
+  orders: number;
+  customers: number;
+  products: number;
+}
 
-const adminLinks = [
-  { href: "/admin/products", label: "Manage Products", desc: "Add, edit, or remove products" },
-  { href: "/admin/orders", label: "Manage Orders", desc: "View and update order status" },
-  { href: "/admin/customers", label: "Manage Customers", desc: "View customer information" },
-];
+async function getStats(): Promise<Stats> {
+  try {
+    const [revResult, ordResult, custResult, prodResult] = await Promise.all([
+      sql`SELECT COALESCE(SUM(CAST(total AS numeric)), 0) as total FROM orders WHERE status != 'cancelled'`,
+      sql`SELECT COUNT(*) as count FROM orders`,
+      sql`SELECT COUNT(*) as count FROM users WHERE role = 'customer'`,
+      sql`SELECT COUNT(*) as count FROM products WHERE is_available = true`,
+    ]);
 
-export default function AdminPage() {
+    return {
+      revenue: `₱${Number(revResult[0]?.total || 0).toLocaleString()}`,
+      orders: Number(ordResult[0]?.count || 0),
+      customers: Number(custResult[0]?.count || 0),
+      products: Number(prodResult[0]?.count || 0),
+    };
+  } catch {
+    return { revenue: "₱0", orders: 0, customers: 0, products: 0 };
+  }
+}
+
+export default async function AdminPage() {
+  const stats = await getStats();
+
+  const statCards = [
+    { icon: DollarSign, label: "Total Revenue", value: stats.revenue, color: "text-green-600", bg: "bg-green-100" },
+    { icon: ShoppingCart, label: "Total Orders", value: String(stats.orders), color: "text-amber-600", bg: "bg-amber-100" },
+    { icon: Users, label: "Customers", value: String(stats.customers), color: "text-blue-600", bg: "bg-blue-100" },
+    { icon: Coffee, label: "Products", value: String(stats.products), color: "text-stone-600", bg: "bg-stone-100" },
+  ];
+
+  const adminLinks = [
+    { href: "/admin/products", label: "Manage Products", desc: "Add, edit, or remove products" },
+    { href: "/admin/orders", label: "Manage Orders", desc: "View and update order status" },
+    { href: "/admin/customers", label: "Manage Customers", desc: "View customer information" },
+  ];
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-8">
@@ -24,7 +54,7 @@ export default function AdminPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-6">
               <div className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center mb-3`}>
