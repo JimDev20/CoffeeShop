@@ -9,7 +9,6 @@ import { useSession, signOut } from "next-auth/react";
 export default function Navbar() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-stone-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -24,9 +23,6 @@ export default function Navbar() {
           <Link href="/menu" className="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Menu</Link>
           {session && (
             <Link href="/orders" className="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Orders</Link>
-          )}
-          {isAdmin && (
-            <Link href="/admin" className="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Admin</Link>
           )}
         </div>
 
@@ -58,9 +54,6 @@ export default function Navbar() {
             <Link href="/menu" className="text-sm font-medium text-stone-600 hover:text-amber-700 py-2" onClick={() => setIsOpen(false)}>Menu</Link>
             {session && (
               <Link href="/orders" className="text-sm font-medium text-stone-600 hover:text-amber-700 py-2" onClick={() => setIsOpen(false)}>Orders</Link>
-            )}
-            {isAdmin && (
-              <Link href="/admin" className="text-sm font-medium text-stone-600 hover:text-amber-700 py-2" onClick={() => setIsOpen(false)}>Admin</Link>
             )}
             {session ? (
               <Button variant="ghost" className="w-full" onClick={() => signOut()}>Sign Out</Button>
