@@ -43,25 +43,26 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchOrders() {
+    if (!session?.user?.email) {
+      setLoading(false); // eslint-disable-line react-hooks/set-state-in-effect
+      return;
+    }
+    let active = true;
+    (async () => {
       try {
         const res = await fetch("/api/orders");
         const data = await res.json();
         const userOrders = data.orders?.filter(
           (o: OrderRow) => o.customer_email === session?.user?.email
         ) || [];
-        setOrders(userOrders);
+        if (active) setOrders(userOrders);
       } catch {
-        setOrders([]);
+        if (active) setOrders([]);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
-    }
-    if (session?.user?.email) {
-      fetchOrders();
-    } else {
-      setLoading(false);
-    }
+    })();
+    return () => { active = false; };
   }, [session]);
 
   if (loading) {

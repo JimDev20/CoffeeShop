@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
 interface CartItem {
@@ -20,26 +20,40 @@ interface CartItem {
 export default function CartPage() {
   const { data: session } = useSession();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [name, setName] = useState(session?.user?.name || "");
-  const [email, setEmail] = useState(session?.user?.email || "");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- initializing state from localStorage */
+    const saved = JSON.parse(localStorage.getItem("cart") || "[]");
+    setItems(saved);
+    if (session?.user?.name) setName(session.user.name);
+    if (session?.user?.email) setEmail(session.user.email);
+    setLoaded(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [session]);
+
+  const saveCart = (updated: CartItem[]) => {
+    setItems(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
+  };
 
   const updateQty = (id: number, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item
+    saveCart(
+      items.map((item) =>
+        item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
       )
     );
   };
 
   const removeItem = (id: number) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    saveCart(items.filter((item) => item.id !== id));
   };
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -89,8 +103,11 @@ export default function CartPage() {
       const payData = await payRes.json();
 
       if (payData.checkout_url) {
+        localStorage.removeItem("cart");
+        // eslint-disable-next-line react-hooks/immutability
         window.location.href = payData.checkout_url;
       } else {
+        localStorage.removeItem("cart");
         setItems([]);
         alert("Order placed successfully! We will contact you for payment.");
       }
@@ -100,6 +117,10 @@ export default function CartPage() {
       setCheckingOut(false);
     }
   };
+
+  if (!loaded) {
+    return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading cart...</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -125,7 +146,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-stone-800">{item.name}</h3>
-                    <p className="text-amber-800 font-bold">₱{item.price}</p>
+                    <p className="text-amber-800 font-bold">₱{item.price.toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(item.id, -1)}>
