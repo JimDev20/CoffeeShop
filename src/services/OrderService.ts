@@ -49,10 +49,34 @@ export class OrderService extends BaseService {
     return Number((row as { count: number }).count);
   }
 
+  async getById(id: number): Promise<OrderRow | null> {
+    const [order] = await this.db`SELECT * FROM orders WHERE id = ${id} LIMIT 1`;
+    return (order as unknown as OrderRow) || null;
+  }
+
+  async updateStatus(id: number, status: string): Promise<OrderRow | null> {
+    const [order] = await this.db`
+      UPDATE orders SET status = ${status}, updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    return (order as unknown as OrderRow) || null;
+  }
+
+  async updatePaymentStatus(id: number, paymentStatus: string, paymentId?: string): Promise<void> {
+    await this.db`
+      UPDATE orders SET
+        payment_status = ${paymentStatus},
+        paymongo_payment_id = ${paymentId ?? null},
+        updated_at = NOW()
+      WHERE id = ${id}
+    `;
+  }
+
   async create(data: CreateOrderDTO): Promise<OrderRow> {
     const [order] = await this.db`
-      INSERT INTO orders (customer_name, customer_email, customer_phone, shipping_address, notes, total, items, status, payment_status)
-      VALUES (${data.customer_name}, ${data.customer_email}, ${data.customer_phone ?? null}, ${data.shipping_address}, ${data.notes ?? null}, ${data.total}, ${JSON.stringify(data.items)}, 'pending', 'unpaid')
+      INSERT INTO orders (customer_name, customer_email, customer_phone, shipping_address, notes, total, items, user_id, status, payment_status)
+      VALUES (${data.customer_name}, ${data.customer_email}, ${data.customer_phone ?? null}, ${data.shipping_address}, ${data.notes ?? null}, ${data.total}, ${JSON.stringify(data.items)}, ${data.user_id ?? null}, 'pending', 'unpaid')
       RETURNING *
     `;
     return order as unknown as OrderRow;
