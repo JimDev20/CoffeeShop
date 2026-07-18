@@ -1,4 +1,5 @@
-// @ts-nocheck — drizzle-orm types not available at runtime; schema used by drizzle-kit only
+// drizzle-orm types used only by drizzle-kit for migration generation
+// @ts-expect-error drizzle-orm/pg-core has no bundled types
 import { pgTable, serial, text, varchar, decimal, integer, boolean, timestamp, json, pgEnum } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["customer", "admin"]);
