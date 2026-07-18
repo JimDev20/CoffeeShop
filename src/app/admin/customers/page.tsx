@@ -6,7 +6,7 @@ import { Users, Mail, Phone } from "lucide-react";
 const customerService = new CustomerService();
 
 export default async function AdminCustomersPage() {
-  let customers = await customerService.getAll().catch(() => []);
+  const customers = await customerService.getAll().catch(() => []);
 
   return (
     <div className="container mx-auto px-4 py-12">

@@ -8,7 +8,7 @@ import Link from "next/link";
 const productService = new ProductService();
 
 export default async function MenuPage() {
-  let products = await productService.getAllAvailable().catch(() => []);
+  const products = await productService.getAllAvailable().catch(() => []);
 
   return (
     <div className="container mx-auto px-4 py-12">
