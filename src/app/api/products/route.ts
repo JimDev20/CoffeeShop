@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ProductService } from "@/services/ProductService";
 import { auth } from "@/lib/auth";
+import { createProductSchema, updateProductSchema } from "@/lib/validations";
 
 const productService = new ProductService();
 
@@ -21,13 +22,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, slug, price } = body;
+    const parsed = createProductSchema.safeParse(body);
 
-    if (!name || !slug || !price) {
-      return NextResponse.json({ error: "name, slug, and price are required" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
     }
 
-    const product = await productService.create(body);
+    const product = await productService.create(parsed.data);
     return NextResponse.json({ product }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -42,12 +44,14 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, ...data } = body;
+    const parsed = updateProductSchema.safeParse(body);
 
-    if (!id) {
-      return NextResponse.json({ error: "id is required" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
     }
 
+    const { id, ...data } = parsed.data;
     const product = await productService.update(id, data);
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
@@ -67,8 +71,8 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    if (!id) {
-      return NextResponse.json({ error: "id is required" }, { status: 400 });
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "Valid id is required" }, { status: 400 });
     }
 
     await productService.delete(Number(id));

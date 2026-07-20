@@ -20,16 +20,16 @@ export interface ProductRow {
 export interface CreateProductDTO {
   name: string;
   slug: string;
-  description?: string;
+  description?: string | null;
   price: number;
-  category_id?: number;
-  image?: string;
+  category_id?: number | null;
+  image?: string | null;
   stock?: number;
   is_available?: boolean;
   is_featured?: boolean;
-  weight?: string;
-  origin?: string;
-  roast_level?: string;
+  weight?: string | null;
+  origin?: string | null;
+  roast_level?: string | null;
 }
 
 export class ProductService extends BaseService {

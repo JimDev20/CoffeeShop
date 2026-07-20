@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PaymentService } from "@/services/PaymentService";
 import { OrderService } from "@/services/OrderService";
+import { paymentSchema } from "@/lib/validations";
 
 const paymentService = new PaymentService();
 const orderService = new OrderService();
@@ -8,11 +9,14 @@ const orderService = new OrderService();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { amount, description, items, order_id, customer_email } = body;
+    const parsed = paymentSchema.safeParse(body);
 
-    if (!amount) {
-      return NextResponse.json({ error: "amount is required" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
     }
+
+    const { amount, description, items, order_id, customer_email } = parsed.data;
 
     const result = await paymentService.createCheckoutSession({
       amount,

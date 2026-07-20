@@ -20,9 +20,9 @@ export interface OrderRow {
 export interface CreateOrderDTO {
   customer_name: string;
   customer_email: string;
-  customer_phone?: string;
+  customer_phone?: string | null;
   shipping_address: string;
-  notes?: string;
+  notes?: string | null;
   items: unknown[];
   total: number;
   user_id?: number;

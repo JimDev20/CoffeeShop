@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { OrderService } from "@/services/OrderService";
 import { auth } from "@/lib/auth";
+import { createOrderSchema } from "@/lib/validations";
 
 const orderService = new OrderService();
 
@@ -26,18 +27,20 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { customer_name, customer_email, shipping_address, items, total } = body;
+    const parsed = createOrderSchema.safeParse(body);
 
-    if (!customer_name || !customer_email || !shipping_address || !items || !total) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
     }
 
     const session = await auth();
-    if (session?.user?.id) {
-      body.user_id = Number(session.user.id);
-    }
+    const orderData = {
+      ...parsed.data,
+      user_id: session?.user?.id ? Number(session.user.id) : undefined,
+    };
 
-    const order = await orderService.create(body);
+    const order = await orderService.create(orderData);
     return NextResponse.json({ order }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });

@@ -14,8 +14,8 @@ export interface CategoryRow {
 export interface CreateCategoryDTO {
   name: string;
   slug: string;
-  description?: string;
-  image?: string;
+  description?: string | null;
+  image?: string | null;
   sort_order?: number;
   is_active?: boolean;
 }

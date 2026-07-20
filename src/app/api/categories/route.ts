@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { CategoryService } from "@/services/CategoryService";
 import { auth } from "@/lib/auth";
+import { createCategorySchema, updateCategorySchema } from "@/lib/validations";
 
 const categoryService = new CategoryService();
 
@@ -21,13 +22,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, slug } = body;
+    const parsed = createCategorySchema.safeParse(body);
 
-    if (!name || !slug) {
-      return NextResponse.json({ error: "Name and slug are required" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
     }
 
-    const category = await categoryService.create(body);
+    const category = await categoryService.create(parsed.data);
     return NextResponse.json({ category }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -42,12 +44,14 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, ...data } = body;
+    const parsed = updateCategorySchema.safeParse(body);
 
-    if (!id) {
-      return NextResponse.json({ error: "Category ID is required" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
     }
 
+    const { id, ...data } = parsed.data;
     const category = await categoryService.update(id, data);
     if (!category) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 });
@@ -68,9 +72,8 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "Category ID is required" }, { status: 400 });
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "Valid id is required" }, { status: 400 });
     }
 
     await categoryService.delete(Number(id));

@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { AuthService } from "@/services/AuthService";
+import { registerSchema } from "@/lib/validations";
 
 const authService = new AuthService();
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const parsed = registerSchema.safeParse(body);
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "name, email, and password are required" }, { status: 400 });
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
     }
+
+    const { name, email, password } = parsed.data;
 
     const existing = await authService.findByEmail(email);
     if (existing) {
