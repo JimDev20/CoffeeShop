@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { ProductService } from "@/services/ProductService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="aspect-square bg-stone-100 rounded-xl flex items-center justify-center relative overflow-hidden">
-          <Coffee className="h-32 w-32 text-stone-300" />
+          {product.image ? (
+            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+          ) : (
+            <Coffee className="h-32 w-32 text-stone-300" />
+          )}
           {product.is_featured && (
             <Badge className="absolute top-4 right-4">Featured</Badge>
           )}

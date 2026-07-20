@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ interface Product {
   weight: string | null;
   origin: string | null;
   roast_level: string | null;
+  image: string | null;
 }
 
 interface ProductForm {
@@ -36,11 +38,12 @@ interface ProductForm {
   weight: string;
   origin: string;
   roast_level: string;
+  image: string;
 }
 
 const emptyForm: ProductForm = {
   name: "", slug: "", description: "", price: 0, category_id: null,
-  stock: 0, is_available: true, is_featured: false, weight: "", origin: "", roast_level: "",
+  stock: 0, is_available: true, is_featured: false, weight: "", origin: "", roast_level: "", image: "",
 };
 
 export default function AdminProductsPage() {
@@ -86,6 +89,7 @@ export default function AdminProductsPage() {
       weight: product.weight || "",
       origin: product.origin || "",
       roast_level: product.roast_level || "",
+      image: product.image || "",
     });
     setEditingId(product.id);
     setShowForm(true);
@@ -159,7 +163,13 @@ export default function AdminProductsPage() {
               <Input placeholder="Origin" value={form.origin} onChange={(e) => setForm({ ...form, origin: e.target.value })} />
               <Input placeholder="Roast Level" value={form.roast_level} onChange={(e) => setForm({ ...form, roast_level: e.target.value })} />
               <Input placeholder="Category ID" type="number" value={form.category_id || ""} onChange={(e) => setForm({ ...form, category_id: Number(e.target.value) || null })} />
+              <Input placeholder="Image URL" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} />
             </div>
+            {form.image && (
+              <div className="w-24 h-24 rounded-lg overflow-hidden bg-stone-100">
+                <img src={form.image} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              </div>
+            )}
             <Textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <div className="flex items-center gap-4">
               <label className="flex items-center gap-2 text-sm text-stone-600">
@@ -186,8 +196,12 @@ export default function AdminProductsPage() {
         {products.map((product) => (
           <Card key={product.id}>
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
-                <Coffee className="h-6 w-6 text-stone-400" />
+              <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden">
+                {product.image ? (
+                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Coffee className="h-6 w-6 text-stone-400" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-stone-800">{product.name}</h3>

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { ProductService } from "@/services/ProductService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,11 @@ export default async function MenuPage() {
         {products.map((product) => (
           <Card key={product.id} className="group overflow-hidden hover:shadow-lg transition-all">
             <div className="aspect-square bg-stone-100 relative overflow-hidden flex items-center justify-center">
-              <Coffee className="h-20 w-20 text-stone-300 group-hover:text-amber-700/40 transition-colors" />
+              {product.image ? (
+                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+              ) : (
+                <Coffee className="h-20 w-20 text-stone-300 group-hover:text-amber-700/40 transition-colors" />
+              )}
               {product.is_featured && <Badge className="absolute top-3 right-3">Featured</Badge>}
             </div>
             <CardContent className="p-4">
