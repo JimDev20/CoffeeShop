@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface OrderRow {
   id: number;
@@ -78,27 +79,29 @@ export default function OrdersPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => (
-            <Card key={order.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                      <Package className="h-6 w-6 text-amber-700" />
+            <Link key={order.id} href={`/orders/${order.id}`}>
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                        <Package className="h-6 w-6 text-amber-700" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-stone-800">Order #{order.id}</p>
+                        <p className="text-sm text-stone-500">{formatDate(order.created_at)} &middot; {itemCount(order.items)} item(s)</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-stone-800">Order #{order.id}</p>
-                      <p className="text-sm text-stone-500">{formatDate(order.created_at)} &middot; {itemCount(order.items)} item(s)</p>
+                    <div className="text-right">
+                      <p className="font-bold text-amber-800">\u20B1{Number(order.total).toLocaleString()}</p>
+                      <Badge variant={statusStyles[order.status] || "secondary"} className="mt-1">
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-amber-800">\u20B1{Number(order.total).toLocaleString()}</p>
-                    <Badge variant={statusStyles[order.status] || "secondary"} className="mt-1">
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
