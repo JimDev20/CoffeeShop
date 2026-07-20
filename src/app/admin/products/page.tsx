@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Coffee, Edit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import Pagination from "@/components/ui/pagination";
 
 interface Product {
   id: number;
@@ -53,6 +54,8 @@ export default function AdminProductsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -131,6 +134,9 @@ export default function AdminProductsPage() {
     return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading products...</div>;
   }
 
+  const totalPages = Math.ceil(products.length / perPage);
+  const paginatedProducts = products.slice((page - 1) * perPage, page * perPage);
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex items-center justify-between mb-8">
@@ -193,7 +199,7 @@ export default function AdminProductsPage() {
 
       <div className="space-y-3">
         {products.length === 0 && <p className="text-stone-400 text-center py-8">No products yet.</p>}
-        {products.map((product) => (
+        {paginatedProducts.map((product) => (
           <Card key={product.id}>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden">
@@ -226,6 +232,7 @@ export default function AdminProductsPage() {
           </Card>
         ))}
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

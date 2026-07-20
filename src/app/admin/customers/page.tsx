@@ -1,12 +1,48 @@
-import { CustomerService } from "@/services/CustomerService";
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Mail, Phone } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import Pagination from "@/components/ui/pagination";
 
-const customerService = new CustomerService();
+interface Customer {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  order_count: number;
+  total_spent: string;
+}
 
-export default async function AdminCustomersPage() {
-  const customers = await customerService.getAll().catch(() => []);
+export default function AdminCustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/customers");
+      const data = await res.json();
+      setCustomers(data.customers || []);
+    } catch {
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCustomers(); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [fetchCustomers]);
+
+  if (loading) {
+    return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading customers...</div>;
+  }
+
+  const totalPages = Math.ceil(customers.length / perPage);
+  const paginatedCustomers = customers.slice((page - 1) * perPage, page * perPage);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -17,7 +53,7 @@ export default async function AdminCustomersPage() {
 
       <div className="space-y-3">
         {customers.length === 0 && <p className="text-stone-400 text-center py-8">No customers yet.</p>}
-        {customers.map((customer) => (
+        {paginatedCustomers.map((customer) => (
           <Card key={customer.id}>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
@@ -39,12 +75,13 @@ export default async function AdminCustomersPage() {
               </div>
               <div className="text-right">
                 <p className="font-semibold text-stone-800">{customer.order_count} orders</p>
-                <p className="text-sm text-amber-700 font-medium">\u20B1{Number(customer.total_spent).toLocaleString()}</p>
+                <p className="text-sm text-amber-700 font-medium">₱{Number(customer.total_spent).toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

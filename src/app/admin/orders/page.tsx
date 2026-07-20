@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import Pagination from "@/components/ui/pagination";
 
 interface Order {
   id: number;
@@ -44,6 +45,8 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -81,6 +84,9 @@ export default function AdminOrdersPage() {
     return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading orders...</div>;
   }
 
+  const totalPages = Math.ceil(orders.length / perPage);
+  const paginatedOrders = orders.slice((page - 1) * perPage, page * perPage);
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-8">
@@ -90,7 +96,7 @@ export default function AdminOrdersPage() {
 
       <div className="space-y-3">
         {orders.length === 0 && <p className="text-stone-400 text-center py-8">No orders yet.</p>}
-        {orders.map((order) => (
+        {paginatedOrders.map((order) => (
           <Card key={order.id}>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
@@ -123,6 +129,7 @@ export default function AdminOrdersPage() {
           </Card>
         ))}
       </div>
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
