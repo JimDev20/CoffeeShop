@@ -2,13 +2,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Coffee, Truck, HeadphonesIcon, Award } from "lucide-react";
+import { CategoryService } from "@/services/CategoryService";
+import { ProductService } from "@/services/ProductService";
 
-const categories = [
-  { name: "Coffee Beans", slug: "coffee-beans", image: "/img/category-beans.jpg", desc: "Single origin & blends" },
-  { name: "Ground Coffee", slug: "ground-coffee", image: "/img/category-ground.jpg", desc: "Pre-ground for convenience" },
-  { name: "Capsules", slug: "capsules", image: "/img/category-capsules.jpg", desc: "Compatible with all machines" },
-  { name: "Accessories", slug: "accessories", image: "/img/category-accessories.jpg", desc: "Brew like a pro" },
-];
+const categoryService = new CategoryService();
+const productService = new ProductService();
 
 const features = [
   { icon: Coffee, title: "Specialty Roasting", desc: "Small-batch roasted for peak flavor" },
@@ -17,7 +15,12 @@ const features = [
   { icon: Award, title: "Premium Quality", desc: "Only the finest Arabica beans" },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [categories, featuredProducts] = await Promise.all([
+    categoryService.getAllActive(),
+    productService.getFeatured(4),
+  ]);
+
   return (
     <>
       <section className="relative bg-gradient-to-br from-amber-900 via-amber-800 to-stone-900 text-white overflow-hidden">
@@ -83,15 +86,21 @@ export default function HomePage() {
               <Link key={cat.slug} href={`/menu?category=${cat.slug}`}>
                 <Card className="group hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer overflow-hidden">
                   <div className="aspect-square bg-stone-100 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-amber-100 flex items-center justify-center">
-                      <Coffee className="h-16 w-16 text-amber-700/40" />
-                    </div>
+                    {cat.image ? (
+                      <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 bg-amber-100 flex items-center justify-center">
+                        <Coffee className="h-16 w-16 text-amber-700/40" />
+                      </div>
+                    )}
                   </div>
                   <CardContent className="p-4 text-center">
                     <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors">
                       {cat.name}
                     </h3>
-                    <p className="text-xs text-stone-500 mt-1">{cat.desc}</p>
+                    {cat.description && (
+                      <p className="text-xs text-stone-500 mt-1">{cat.description}</p>
+                    )}
                   </CardContent>
                 </Card>
               </Link>
@@ -99,6 +108,55 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {featuredProducts.length > 0 && (
+        <section className="py-16 md:py-24">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-center text-stone-800 mb-4">
+              Featured <span className="text-amber-700">Products</span>
+            </h2>
+            <p className="text-center text-stone-500 mb-12 max-w-xl mx-auto">
+              Our most popular picks, curated just for you.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <Link key={product.id} href={`/menu/${product.slug}`}>
+                  <Card className="group hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer overflow-hidden h-full">
+                    <div className="aspect-square bg-stone-100 relative overflow-hidden">
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 bg-amber-50 flex items-center justify-center">
+                          <Coffee className="h-16 w-16 text-amber-700/30" />
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="p-4">
+                      {product.category_name && (
+                        <p className="text-xs text-amber-700 font-medium mb-1">{product.category_name}</p>
+                      )}
+                      <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors">
+                        {product.name}
+                      </h3>
+                      {product.description && (
+                        <p className="text-sm text-stone-500 mt-1 line-clamp-2">{product.description}</p>
+                      )}
+                      <p className="text-lg font-bold text-amber-800 mt-2">₱{Number(product.price).toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center mt-8">
+              <Link href="/menu">
+                <Button variant="outline" className="border-amber-700 text-amber-700 hover:bg-amber-50">
+                  View All Products
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-16 md:py-24 bg-gradient-to-r from-amber-800 to-amber-700 text-white">
         <div className="container mx-auto px-4 text-center">

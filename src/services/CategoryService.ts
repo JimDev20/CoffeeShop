@@ -4,6 +4,8 @@ export interface CategoryRow {
   id: number;
   name: string;
   slug: string;
+  description: string | null;
+  image: string | null;
   sort_order: number;
   is_active: boolean;
 }

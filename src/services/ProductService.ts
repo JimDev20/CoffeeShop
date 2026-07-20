@@ -106,6 +106,17 @@ export class ProductService extends BaseService {
     return Number((row as { count: number }).count);
   }
 
+  async getFeatured(limit = 4): Promise<ProductRow[]> {
+    return this.db`
+      SELECT p.*, c.name as category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.is_available = true AND p.is_featured = true
+      ORDER BY p.name
+      LIMIT ${limit}
+    ` as unknown as ProductRow[];
+  }
+
   async create(data: CreateProductDTO): Promise<ProductRow> {
     const [product] = await this.db`
       INSERT INTO products (name, slug, description, price, category_id, image, stock, is_available, is_featured, weight, origin, roast_level)
