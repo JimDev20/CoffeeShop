@@ -90,6 +90,9 @@ export default function CartPage() {
         throw new Error(errData.error || "Failed to create order");
       }
 
+      const orderData = await orderRes.json();
+      const orderId = orderData.order?.id;
+
       const payRes = await fetch("/api/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,6 +100,8 @@ export default function CartPage() {
           amount: total,
           description: `Coffee Shop Order - ${name}`,
           items: items.map((i) => ({ name: i.name, quantity: i.quantity, amount: i.price })),
+          order_id: orderId,
+          customer_email: email,
         }),
       });
 

@@ -62,6 +62,7 @@ export const orders = pgTable("orders", {
   paymentStatus: paymentStatusEnum("payment_status").default("unpaid").notNull(),
   paymentId: varchar("payment_id", { length: 255 }),
   paymongoPaymentId: varchar("paymongo_payment_id", { length: 255 }),
+  paymongoSessionId: varchar("paymongo_session_id", { length: 255 }),
   items: json("items").$type<OrderItem[]>().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

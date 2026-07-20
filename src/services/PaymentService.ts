@@ -3,10 +3,13 @@ export interface CheckoutDTO {
   description?: string;
   items?: unknown[];
   payment_method?: string;
+  order_id?: number;
+  customer_email?: string;
 }
 
 export interface CheckoutResult {
   checkout_url: string | null;
+  session_id: string | null;
   order_created: boolean;
   error?: string;
 }
@@ -17,12 +20,27 @@ export class PaymentService {
     if (!secretKey) {
       return {
         checkout_url: null,
+        session_id: null,
         order_created: true,
         error: "Payment gateway not configured",
       };
     }
 
     const amount = Math.round(data.amount * 100);
+
+    const attributes: Record<string, unknown> = {
+      amount,
+      currency: "PHP",
+      description: data.description || "Coffee Shop Order",
+      statement_descriptor: "BREW & CO.",
+    };
+
+    if (data.order_id) {
+      attributes.metadata = {
+        order_id: String(data.order_id),
+        customer_email: data.customer_email || "",
+      };
+    }
 
     const response = await fetch("https://api.paymongo.com/v1/checkout_sessions", {
       method: "POST",
@@ -32,12 +50,7 @@ export class PaymentService {
       },
       body: JSON.stringify({
         data: {
-          attributes: {
-            amount,
-            currency: "PHP",
-            description: data.description || "Coffee Shop Order",
-            statement_descriptor: "BREW & CO.",
-          },
+          attributes,
         },
       }),
     });
@@ -45,6 +58,7 @@ export class PaymentService {
     if (!response.ok) {
       return {
         checkout_url: null,
+        session_id: null,
         order_created: true,
         error: "Payment gateway error",
       };
@@ -52,7 +66,8 @@ export class PaymentService {
 
     const result = await response.json();
     const checkoutUrl = result?.data?.attributes?.checkout_url;
+    const sessionId = result?.data?.id;
 
-    return { checkout_url: checkoutUrl, order_created: true };
+    return { checkout_url: checkoutUrl, session_id: sessionId || null, order_created: true };
   }
 }

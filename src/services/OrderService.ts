@@ -13,6 +13,8 @@ export interface OrderRow {
   items: string;
   created_at: string;
   user_id: number | null;
+  paymongo_session_id: string | null;
+  paymongo_payment_id: string | null;
 }
 
 export interface CreateOrderDTO {
@@ -70,6 +72,18 @@ export class OrderService extends BaseService {
         paymongo_payment_id = ${paymentId ?? null},
         updated_at = NOW()
       WHERE id = ${id}
+    `;
+  }
+
+  async findBySessionId(sessionId: string): Promise<OrderRow | null> {
+    const [order] = await this.db`SELECT * FROM orders WHERE paymongo_session_id = ${sessionId} LIMIT 1`;
+    return (order as unknown as OrderRow) || null;
+  }
+
+  async updatePaymongoSessionId(orderId: number, sessionId: string): Promise<void> {
+    await this.db`
+      UPDATE orders SET paymongo_session_id = ${sessionId}, updated_at = NOW()
+      WHERE id = ${orderId}
     `;
   }
 
