@@ -2,13 +2,44 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X, ShoppingCart, Coffee } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+
+function getCartCount(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    return Array.isArray(cart) ? cart.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0) : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export default function Navbar() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      setCartCount(getCartCount());
+    }
+
+    const handleStorage = () => setCartCount(getCartCount());
+    window.addEventListener("storage", handleStorage);
+
+    const interval = setInterval(() => {
+      setCartCount(getCartCount());
+    }, 500);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-stone-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -30,6 +61,11 @@ export default function Navbar() {
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-amber-700 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </Button>
           </Link>
           {session ? (
