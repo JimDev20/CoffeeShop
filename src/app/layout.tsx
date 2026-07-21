@@ -5,7 +5,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import AuthProvider from "@/components/AuthProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "Brew & Co. Coffee Shop",
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.variable} font-sans`}>
         <AuthProvider>
           <Navbar />
           <main className="min-h-screen">{children}</main>

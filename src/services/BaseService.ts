@@ -1,7 +1,7 @@
-import sql from "@/lib/db";
+import getDb from "@/lib/db";
 
 export abstract class BaseService {
   protected get db() {
-    return sql;
+    return getDb();
   }
 }
