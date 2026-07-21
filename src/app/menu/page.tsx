@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Coffee, Plus, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 const productService = new ProductService();
@@ -26,6 +26,14 @@ const sortLabels: Record<SortOption, string> = {
 };
 
 export default function MenuPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading menu...</div>}>
+      <MenuContent />
+    </Suspense>
+  );
+}
+
+function MenuContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "";
 
