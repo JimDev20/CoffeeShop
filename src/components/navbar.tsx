@@ -1,19 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef } from "react";
-import { Menu, X, ShoppingCart, Coffee } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
+import { Menu, X } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 function getCartCount(): number {
   if (typeof window === "undefined") return 0;
   try {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    return Array.isArray(cart) ? cart.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0) : 0;
+    return Array.isArray(cart)
+      ? cart.reduce((sum: number, item: { quantity?: number }) => sum + (item.quantity || 1), 0)
+      : 0;
   } catch {
     return 0;
   }
+}
+
+function SeedMark() {
+  return (
+    <svg viewBox="0 0 34 24" aria-hidden="true" className="h-5 w-7">
+      <circle cx="11" cy="12" r="10" fill="currentColor" />
+      <circle cx="23" cy="12" r="10" fill="currentColor" opacity="0.5" />
+    </svg>
+  );
 }
 
 export default function Navbar() {
@@ -42,65 +52,105 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-stone-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold text-amber-800">
-          <Coffee className="h-6 w-6" />
-          <span>Brew & Co.</span>
+    <header className="sticky top-0 z-50 bg-bone">
+      <nav className="page-shell flex items-center justify-between gap-4 py-3" aria-label="Main">
+        <Link href="/" className="flex items-center gap-2.5 font-display text-2xl leading-none tracking-tight">
+          <SeedMark />
+          <span>Brew &amp; Co.</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6">
-          <Link href="/" className="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Home</Link>
-          <Link href="/menu" className="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Menu</Link>
+        <div className="hidden items-center gap-8 text-sm md:flex">
+          <Link href="/menu" className="underline decoration-transparent underline-offset-4 transition-colors hover:decoration-ink">
+            Menu
+          </Link>
+          <Link href="/#roast" className="underline decoration-transparent underline-offset-4 transition-colors hover:decoration-ink">
+            Roast levels
+          </Link>
+          <Link href="/#story" className="underline decoration-transparent underline-offset-4 transition-colors hover:decoration-ink">
+            Our story
+          </Link>
           {session && (
-            <Link href="/orders" className="text-sm font-medium text-stone-600 hover:text-amber-700 transition-colors">Orders</Link>
+            <Link href="/orders" className="underline decoration-transparent underline-offset-4 transition-colors hover:decoration-ink">
+              Orders
+            </Link>
           )}
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-amber-700 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartCount > 99 ? "99+" : cartCount}
-                </span>
-              )}
-            </Button>
+          <Link
+            href="/cart"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-field px-4 text-sm font-medium text-field-ink transition-colors hover:bg-field-strong"
+          >
+            Cart
+            {cartCount > 0 && (
+              <span className="grid h-5 min-w-5 place-content-center rounded-full bg-bone px-1 text-[11px] font-semibold text-ink">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+            <span className="sr-only">({cartCount} items)</span>
           </Link>
+
           {session ? (
-            <Button variant="ghost" size="sm" onClick={() => signOut()} className="hidden md:block">
-              Sign Out
-            </Button>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="hidden text-sm underline underline-offset-4 hover:decoration-2 md:inline-flex"
+            >
+              Sign out
+            </button>
           ) : (
-            <Link href="/auth/login" className="hidden md:block">
-              <Button variant="default" size="sm">Sign In</Button>
+            <Link
+              href="/auth/login"
+              className="hidden text-sm underline underline-offset-4 hover:decoration-2 md:inline-flex"
+            >
+              Sign in
             </Link>
           )}
-          <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+
+          <button
+            type="button"
+            onClick={() => setIsOpen((open) => !open)}
+            className="grid h-10 w-10 place-content-center rounded-full hover:bg-surface md:hidden"
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <span className="sr-only">{isOpen ? "Close menu" : "Open menu"}</span>
           </button>
         </div>
-      </div>
+      </nav>
 
       {isOpen && (
-        <div className="md:hidden border-t border-stone-200 bg-white p-4">
-          <div className="flex flex-col gap-3">
-            <Link href="/" className="text-sm font-medium text-stone-600 hover:text-amber-700 py-2" onClick={() => setIsOpen(false)}>Home</Link>
-            <Link href="/menu" className="text-sm font-medium text-stone-600 hover:text-amber-700 py-2" onClick={() => setIsOpen(false)}>Menu</Link>
+        <div id="mobile-menu" className="bg-surface md:hidden">
+          <div className="page-shell flex flex-col gap-1 py-6">
+            <Link href="/menu" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+              Menu
+            </Link>
+            <Link href="/#roast" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+              Roast levels
+            </Link>
+            <Link href="/#story" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+              Our story
+            </Link>
             {session && (
-              <Link href="/orders" className="text-sm font-medium text-stone-600 hover:text-amber-700 py-2" onClick={() => setIsOpen(false)}>Orders</Link>
-            )}
-            {session ? (
-              <Button variant="ghost" className="w-full" onClick={() => signOut()}>Sign Out</Button>
-            ) : (
-              <Link href="/auth/login" onClick={() => setIsOpen(false)}>
-                <Button variant="default" className="w-full">Sign In</Button>
+              <Link href="/orders" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+                Orders
               </Link>
             )}
+            <div className="mt-3 flex items-center gap-5 text-sm">
+              {session ? (
+                <button type="button" onClick={() => signOut()} className="underline underline-offset-4">
+                  Sign out
+                </button>
+              ) : (
+                <Link href="/auth/login" onClick={() => setIsOpen(false)} className="underline underline-offset-4">
+                  Sign in
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

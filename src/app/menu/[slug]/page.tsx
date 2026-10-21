@@ -1,11 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
-import { ProductService } from "@/services/ProductService";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Coffee, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
+import { roastInk, roastTone } from "@/lib/catalogue";
+import { ProductService } from "@/services/ProductService";
+
+export const dynamic = "force-dynamic";
 
 const productService = new ProductService();
 
@@ -17,71 +18,84 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <Link href="/menu" className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-700 transition-colors mb-8">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Menu
-      </Link>
+  const facts = [
+    ["Category", product.category_name || "Uncategorized"],
+    ["Origin", product.origin],
+    ["Roast level", product.roast_level],
+    ["Weight", product.weight],
+    ["Stock", product.stock > 0 ? `${product.stock} in stock` : "Out of stock"],
+  ].filter((fact): fact is [string, string] => Boolean(fact[1]));
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="aspect-square bg-stone-100 rounded-xl flex items-center justify-center relative overflow-hidden">
+  return (
+    <div className="page-shell">
+      <div className="py-8">
+        <Link href="/menu" className="inline-flex items-center gap-2 text-sm underline underline-offset-4">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to the shelf
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-10 pb-24 md:grid-cols-2 md:gap-16">
+        <div
+          className="relative mx-auto flex aspect-square w-full max-w-[560px] items-center justify-center overflow-hidden rounded-full"
+          style={{ background: roastTone(product.roast_level) }}
+        >
           {product.image ? (
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            <img
+              src={product.image}
+              alt={product.name}
+              width={800}
+              height={800}
+              className="h-full w-full object-cover"
+            />
           ) : (
-            <Coffee className="h-32 w-32 text-stone-300" />
-          )}
-          {product.is_featured && (
-            <Badge className="absolute top-4 right-4">Featured</Badge>
+            <svg
+              viewBox="0 0 24 24"
+              className="h-2/5 w-2/5"
+              style={{ color: roastInk(product.roast_level) }}
+              aria-hidden="true"
+            >
+              <ellipse cx="12" cy="12" rx="6" ry="9" transform="rotate(32 12 12)" fill="currentColor" />
+              <path
+                d="M8.6 6.7c2.3 1.6 1 3.7 3 5.3s3.7 1.2 3.7 4.4"
+                fill="none"
+                stroke="var(--bone)"
+                strokeWidth="0.8"
+                strokeLinecap="round"
+              />
+            </svg>
           )}
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <p className="text-sm text-stone-500 mb-1">{product.category_name || "Uncategorized"}</p>
-            <h1 className="text-3xl font-bold text-stone-800">{product.name}</h1>
+        <div className="max-w-xl">
+          <p className="text-sm text-muted">
+            {product.category_name || "Uncategorized"}
+            {product.is_featured ? " / Featured lot" : ""}
+          </p>
+          <h1 className="page-title mt-3">{product.name}</h1>
+          {product.description && <p className="mt-6 text-lg leading-relaxed">{product.description}</p>}
+          <p className="mt-8 font-display text-4xl leading-none">₱{Number(product.price).toLocaleString()}</p>
+
+          <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6">
+            {facts.map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-[0.8125rem] text-muted">{label}</dt>
+                <dd className="mt-1 text-[1.0625rem]">{value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="mt-10">
+            <AddToCartButton product={product} />
           </div>
 
-          <p className="text-stone-600 leading-relaxed">{product.description}</p>
-
-          <div className="text-3xl font-bold text-amber-800">
-            ₱{Number(product.price).toLocaleString()}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {product.weight && (
-              <Card>
-                <CardContent className="p-3">
-                  <p className="text-xs text-stone-500">Weight</p>
-                  <p className="font-medium text-stone-800">{product.weight}</p>
-                </CardContent>
-              </Card>
-            )}
-            {product.origin && (
-              <Card>
-                <CardContent className="p-3">
-                  <p className="text-xs text-stone-500">Origin</p>
-                  <p className="font-medium text-stone-800">{product.origin}</p>
-                </CardContent>
-              </Card>
-            )}
-            {product.roast_level && (
-              <Card>
-                <CardContent className="p-3">
-                  <p className="text-xs text-stone-500">Roast Level</p>
-                  <p className="font-medium text-stone-800">{product.roast_level}</p>
-                </CardContent>
-              </Card>
-            )}
-            <Card>
-              <CardContent className="p-3">
-                <p className="text-xs text-stone-500">Stock</p>
-                <p className="font-medium text-stone-800">{product.stock} units</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <AddToCartButton product={product} />
+          <Link
+            href="/menu"
+            className="mt-8 inline-flex items-center gap-1 text-sm underline underline-offset-4 hover:decoration-2"
+          >
+            See the rest of the shelf
+            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
       </div>
     </div>

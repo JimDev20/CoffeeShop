@@ -1,16 +1,14 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { ProductService, ProductRow } from "@/services/ProductService";
-import { CategoryService, CategoryRow } from "@/services/CategoryService";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import ProductMark from "@/components/product-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Coffee, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { CategoryService, type CategoryRow } from "@/services/CategoryService";
+import { ProductService, type ProductRow } from "@/services/ProductService";
+import { ArrowUpRight, Search } from "lucide-react";
 import Link from "next/link";
-import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 const productService = new ProductService();
 const categoryService = new CategoryService();
@@ -20,14 +18,37 @@ type SortOption = "name-asc" | "name-desc" | "price-asc" | "price-desc" | "newes
 const sortLabels: Record<SortOption, string> = {
   "name-asc": "Name A-Z",
   "name-desc": "Name Z-A",
-  "price-asc": "Price Low-High",
-  "price-desc": "Price High-Low",
-  "newest": "Newest",
+  "price-asc": "Price low to high",
+  "price-desc": "Price high to low",
+  newest: "Newest",
 };
+
+function MenuSkeleton() {
+  return (
+    <div className="page-shell" aria-label="Loading menu">
+      <div className="page-head">
+        <div className="h-16 w-3/4 max-w-xl bg-surface" />
+        <div className="mt-6 h-5 w-2/3 max-w-md bg-surface" />
+      </div>
+      <div className="grid grid-cols-1 gap-x-16 lg:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="flex gap-4 py-6">
+            <div className="h-14 w-14 shrink-0 rounded-full bg-surface" />
+            <div className="flex-1 space-y-3">
+              <div className="h-4 w-1/2 bg-surface" />
+              <div className="h-3 w-3/4 bg-surface" />
+              <div className="h-3 w-1/3 bg-surface" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function MenuPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading menu...</div>}>
+    <Suspense fallback={<MenuSkeleton />}>
       <MenuContent />
     </Suspense>
   );
@@ -59,19 +80,19 @@ function MenuContent() {
     let result = [...products];
 
     if (search) {
-      const q = search.toLowerCase();
+      const query = search.toLowerCase();
       result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          (p.description && p.description.toLowerCase().includes(q)) ||
-          (p.category_name && p.category_name.toLowerCase().includes(q))
+        (product) =>
+          product.name.toLowerCase().includes(query) ||
+          (product.description && product.description.toLowerCase().includes(query)) ||
+          (product.category_name && product.category_name.toLowerCase().includes(query))
       );
     }
 
     if (selectedCategory) {
-      const cat = categories.find((c) => c.slug === selectedCategory);
-      if (cat) {
-        result = result.filter((p) => p.category_id === cat.id);
+      const category = categories.find((item) => item.slug === selectedCategory);
+      if (category) {
+        result = result.filter((product) => product.category_id === category.id);
       }
     }
 
@@ -96,98 +117,124 @@ function MenuContent() {
     return result;
   }, [products, search, selectedCategory, sortBy, categories]);
 
+  const hasFilters = Boolean(search || selectedCategory || sortBy !== "name-asc");
+
   const clearFilters = useCallback(() => {
     setSearch("");
     setSelectedCategory("");
     setSortBy("name-asc");
   }, []);
 
-  if (loading) {
-    return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading menu...</div>;
-  }
+  if (loading) return <MenuSkeleton />;
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-stone-800 mb-4">Our <span className="text-amber-700">Menu</span></h1>
-        <p className="text-stone-500 max-w-xl mx-auto">
-          Explore our selection of premium coffee and accessories. Every product is carefully curated for the best experience.
+    <div className="page-shell">
+      <div className="page-head">
+        <h1 className="page-title" data-reveal>
+          Everything on the shelf.
+        </h1>
+        <p className="section-lead mt-6" data-reveal style={{ "--reveal-delay": "70ms" } as CSSProperties}>
+          Beans, ground coffee, capsules and the gear to brew them. Search the shelf or filter it to the lot you
+          want.
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-8">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           <Input
-            placeholder="Search products..."
+            placeholder="Search the shelf"
+            aria-label="Search products"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            onChange={(event) => setSearch(event.target.value)}
+            className="pl-11"
           />
         </div>
         <select
           value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-3 py-2 border rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+          onChange={(event) => setSelectedCategory(event.target.value)}
+          aria-label="Filter by category"
+          className="field min-h-11 md:w-auto"
         >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.slug}>{cat.name}</option>
+          <option value="">All categories</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.slug}>
+              {category.name}
+            </option>
           ))}
         </select>
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4 text-stone-400" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="px-3 py-2 border rounded-lg text-sm text-stone-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-          >
-            {Object.entries(sortLabels).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-        </div>
-        {(search || selectedCategory || sortBy !== "name-asc") && (
-          <Button variant="outline" onClick={clearFilters} className="text-sm">
-            Clear
+        <select
+          value={sortBy}
+          onChange={(event) => setSortBy(event.target.value as SortOption)}
+          aria-label="Sort products"
+          className="field min-h-11 md:w-auto"
+        >
+          {Object.entries(sortLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        {hasFilters && (
+          <Button variant="ghost" onClick={clearFilters}>
+            Clear filters
           </Button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredProducts.length === 0 && (
-          <p className="col-span-full text-center text-stone-400 py-16">
-            No products found. {(search || selectedCategory) && (
-              <button onClick={clearFilters} className="text-amber-700 hover:underline ml-1">Clear filters</button>
-            )}
-          </p>
-        )}
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="group overflow-hidden hover:shadow-lg transition-all">
-            <div className="aspect-square bg-stone-100 relative overflow-hidden flex items-center justify-center">
-              {product.image ? (
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-              ) : (
-                <Coffee className="h-20 w-20 text-stone-300 group-hover:text-amber-700/40 transition-colors" />
-              )}
-              {product.is_featured && <Badge className="absolute top-3 right-3">Featured</Badge>}
-            </div>
-            <CardContent className="p-4">
-              <p className="text-xs text-stone-500 mb-1">{product.category_name || "Uncategorized"}</p>
-              <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors">{product.name}</h3>
-              <p className="text-sm text-stone-500 mt-1 line-clamp-2">{product.description}</p>
-              <div className="flex items-center justify-between mt-3">
-                <span className="text-lg font-bold text-amber-800">₱{Number(product.price).toLocaleString()}</span>
-                <Link href={`/menu/${product.slug}`}>
-                  <Button size="sm" className="bg-amber-700 hover:bg-amber-800">
-                    <Plus className="h-4 w-4 mr-1" /> Add
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <p className="mt-8 text-sm text-muted" aria-live="polite">
+        {filteredProducts.length} {filteredProducts.length === 1 ? "item" : "items"}
+      </p>
+
+      {filteredProducts.length === 0 ? (
+        <div className="py-20">
+          <h2 className="section-title">Nothing matches that.</h2>
+          <p className="section-lead mt-4">Try a different word or show the whole shelf.</p>
+          <Button className="mt-8" onClick={clearFilters}>
+            Show every item
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-2 grid grid-cols-1 gap-x-16 lg:grid-cols-2">
+          {filteredProducts.map((product, index) => (
+            <Link
+              key={product.id}
+              href={`/menu/${product.slug}`}
+              className="list-row"
+              data-reveal
+              style={{ "--reveal-delay": `${(index % 4) * 50}ms` } as CSSProperties}
+            >
+              <ProductMark product={product} />
+              <span className="min-w-0">
+                <span className="block text-[1.0625rem] font-medium leading-snug">{product.name}</span>
+                {product.description && (
+                  <span className="mt-1 line-clamp-2 block text-sm leading-relaxed text-muted">
+                    {product.description}
+                  </span>
+                )}
+                <span className="mt-2 block text-[0.8125rem]">
+                  {[
+                    product.category_name,
+                    product.origin,
+                    product.roast_level,
+                    product.weight,
+                    product.is_featured ? "Featured" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" / ")}
+                </span>
+              </span>
+              <span className="text-right">
+                <span className="block text-[1.0625rem] font-medium">₱{Number(product.price).toLocaleString()}</span>
+                <span className="mt-2 inline-flex items-center gap-1 text-[0.8125rem] underline underline-offset-4">
+                  View
+                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

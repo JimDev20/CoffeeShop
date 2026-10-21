@@ -1,13 +1,12 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+/* eslint-disable @next/next/no-img-element */
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, MapPin, Phone, Mail, FileText } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Phone, FileText } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface OrderItem {
   id?: number;
@@ -33,27 +32,24 @@ interface Order {
   updated_at: string;
 }
 
-const statusStyles: Record<string, "default" | "warning" | "success" | "secondary" | "destructive"> = {
-  pending: "warning",
-  confirmed: "default",
-  preparing: "default",
-  ready: "success",
-  delivered: "success",
-  cancelled: "destructive",
-};
-
-const paymentStyles: Record<string, "default" | "warning" | "success" | "destructive" | "secondary"> = {
-  unpaid: "warning",
-  paid: "success",
-  failed: "destructive",
-  refunded: "secondary",
+const statusTone: Record<string, string> = {
+  pending: "bg-tone-light",
+  confirmed: "bg-tone-medium",
+  preparing: "bg-tone-medium",
+  ready: "bg-field",
+  delivered: "bg-field",
+  cancelled: "bg-[#8c2f24]",
 };
 
 const statusSteps = ["pending", "confirmed", "preparing", "ready", "delivered"];
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -90,18 +86,25 @@ export default function OrderDetailPage() {
         if (active) setLoading(false);
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [session, orderId]);
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading order details...</div>;
+    return <div className="page-shell py-24 text-center text-muted">Loading order details...</div>;
   }
 
   if (!order) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <p className="text-stone-400 mb-4">Order not found.</p>
-        <Link href="/orders"><Button variant="outline">Back to Orders</Button></Link>
+      <div className="page-shell">
+        <div className="page-head">
+          <h1 className="page-title">Order not found.</h1>
+          <p className="section-lead mt-6">It may belong to a different account.</p>
+        </div>
+        <Link href="/orders" className="btn-pill">
+          Back to orders
+        </Link>
       </div>
     );
   }
@@ -110,119 +113,109 @@ export default function OrderDetailPage() {
   const currentStep = statusSteps.indexOf(order.status);
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <Link href="/orders" className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-700 transition-colors mb-8">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Orders
-      </Link>
+    <div className="page-shell">
+      <div className="py-8">
+        <Link href="/orders" className="inline-flex items-center gap-2 text-sm underline underline-offset-4">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to orders
+        </Link>
+      </div>
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-stone-800">Order #{order.id}</h1>
-          <p className="text-stone-500 mt-1">{formatDate(order.created_at)}</p>
+          <h1 className="page-title">Order #{order.id}</h1>
+          <p className="mt-3 text-sm text-muted">{formatDate(order.created_at)}</p>
         </div>
-        <div className="text-right">
-          <Badge variant={statusStyles[order.status] || "secondary"} className="text-sm">
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-          </Badge>
-          <p className="text-xs text-stone-500 mt-1">
-            Payment: <Badge variant={paymentStyles[order.payment_status] || "secondary"} className="text-xs ml-1">
-              {order.payment_status}
-            </Badge>
-          </p>
-        </div>
+        <p className="inline-flex items-center gap-2 text-sm capitalize">
+          <span className={`h-2.5 w-2.5 rounded-full ${statusTone[order.status] || "bg-tone-medium"}`} aria-hidden="true" />
+          {order.status} / payment {order.payment_status}
+        </p>
       </div>
 
       {order.status !== "cancelled" && currentStep >= 0 && (
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              {statusSteps.map((step, i) => (
-                <div key={step} className="flex items-center flex-1 last:flex-initial">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      i <= currentStep ? "bg-amber-700 text-white" : "bg-stone-200 text-stone-500"
-                    }`}>
-                      {i + 1}
-                    </div>
-                    <span className="text-xs text-stone-500 mt-1 capitalize">{step}</span>
-                  </div>
-                  {i < statusSteps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-2 ${i < currentStep ? "bg-amber-700" : "bg-stone-200"}`} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <ol className="mt-10 flex items-start gap-2" aria-label="Order progress">
+          {statusSteps.map((step, index) => (
+            <li key={step} className="flex flex-1 flex-col items-center gap-2 last:flex-none">
+              <div className="flex w-full items-center gap-2">
+                <span
+                  className={`grid h-8 w-8 shrink-0 place-content-center rounded-full text-sm ${
+                    index <= currentStep ? "bg-field text-field-ink" : "bg-surface text-muted"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                {index < statusSteps.length - 1 && (
+                  <span
+                    className={`h-px flex-1 ${index < currentStep ? "bg-field" : "bg-surface-strong"}`}
+                    aria-hidden="true"
+                  />
+                )}
+              </div>
+              <span className={`text-xs capitalize ${index <= currentStep ? "text-ink" : "text-muted"}`}>{step}</span>
+            </li>
+          ))}
+        </ol>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
-                <Package className="h-4 w-4" /> Order Items
-              </h2>
-              <div className="divide-y">
-                {items.map((item, i) => (
-                  <div key={i} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                    <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden">
-                      {item.image ? (
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
-                      ) : (
-                        <Package className="h-5 w-5 text-stone-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-stone-800">{item.name}</p>
-                      <p className="text-sm text-stone-500">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-semibold text-stone-800">₱{(item.price * item.quantity).toLocaleString()}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t mt-4 pt-4 flex justify-between font-bold text-lg">
-                <span>Total</span>
-                <span className="text-amber-800">₱{Number(order.total).toLocaleString()}</span>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="mt-12 grid grid-cols-1 gap-12 pb-24 md:grid-cols-[1.2fr_0.8fr] md:gap-16">
+        <div>
+          <h2 className="font-display text-3xl leading-none">Items</h2>
+          <ul className="mt-4">
+            {items.map((item, index) => (
+              <li key={index} className="flex items-center gap-4 py-5">
+                <span className="grid h-14 w-14 shrink-0 place-content-center overflow-hidden rounded-full bg-surface">
+                  {item.image ? (
+                    <img src={item.image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7 text-ink" aria-hidden="true">
+                      <ellipse cx="12" cy="12" rx="6" ry="9" transform="rotate(32 12 12)" fill="currentColor" />
+                    </svg>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">{item.name}</span>
+                  <span className="mt-1 block text-sm text-muted">
+                    ₱{item.price.toLocaleString()} / qty {item.quantity}
+                  </span>
+                </span>
+                <span className="font-medium">₱{(item.price * item.quantity).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4 flex items-baseline justify-between">
+            <span className="font-medium">Total</span>
+            <span className="font-display text-3xl leading-none">₱{Number(order.total).toLocaleString()}</span>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <h2 className="font-semibold text-stone-800">Delivery Details</h2>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <Mail className="h-4 w-4 text-stone-400 mt-0.5" />
-                  <span className="text-stone-600">{order.customer_email}</span>
-                </div>
-                {order.customer_phone && (
-                  <div className="flex items-start gap-2">
-                    <Phone className="h-4 w-4 text-stone-400 mt-0.5" />
-                    <span className="text-stone-600">{order.customer_phone}</span>
-                  </div>
-                )}
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-stone-400 mt-0.5" />
-                  <span className="text-stone-600">{order.shipping_address}</span>
-                </div>
-                {order.notes && (
-                  <div className="flex items-start gap-2">
-                    <FileText className="h-4 w-4 text-stone-400 mt-0.5" />
-                    <span className="text-stone-600">{order.notes}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Button variant="outline" className="w-full" onClick={() => router.push("/menu")}>
-            Order Again
+        <aside className="h-fit bg-surface p-6 md:p-8">
+          <h2 className="font-display text-2xl leading-none">Delivery</h2>
+          <div className="mt-5 space-y-4 text-sm">
+            <p className="flex items-start gap-3">
+              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+              {order.customer_email}
+            </p>
+            {order.customer_phone && (
+              <p className="flex items-start gap-3">
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+                {order.customer_phone}
+              </p>
+            )}
+            <p className="flex items-start gap-3">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+              {order.shipping_address}
+            </p>
+            {order.notes && (
+              <p className="flex items-start gap-3">
+                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+                {order.notes}
+              </p>
+            )}
+          </div>
+          <Button variant="outline" className="mt-8 w-full" onClick={() => router.push("/menu")}>
+            Order again
           </Button>
-        </div>
+        </aside>
       </div>
     </div>
   );

@@ -1,12 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 interface CartItem {
@@ -80,7 +79,12 @@ export default function CartPage() {
           customer_phone: phone,
           shipping_address: address,
           notes,
-          items: items.map((i) => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
+          items: items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
           total,
         }),
       });
@@ -99,7 +103,7 @@ export default function CartPage() {
         body: JSON.stringify({
           amount: total,
           description: `Coffee Shop Order - ${name}`,
-          items: items.map((i) => ({ name: i.name, quantity: i.quantity, amount: i.price })),
+          items: items.map((item) => ({ name: item.name, quantity: item.quantity, amount: item.price })),
           order_id: orderId,
           customer_email: email,
         }),
@@ -124,95 +128,160 @@ export default function CartPage() {
   };
 
   if (!loaded) {
-    return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading cart...</div>;
+    return <div className="page-shell py-24 text-center text-muted">Loading cart...</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-stone-800 mb-8">Your <span className="text-amber-700">Cart</span></h1>
+    <div className="page-shell">
+      <div className="page-head">
+        <h1 className="page-title">Your cart.</h1>
+        <p className="section-lead mt-6">
+          {items.length > 0
+            ? "Check the lot, set the quantity, then tell us where it is going."
+            : "A bag, a grinder or a box of capsules is waiting on the shelf."}
+        </p>
+      </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-16">
-          <ShoppingCart className="h-16 w-16 mx-auto text-stone-300 mb-4" />
-          <h2 className="text-xl font-semibold text-stone-600 mb-2">Your cart is empty</h2>
-          <p className="text-stone-500 mb-6">Looks like you haven&apos;t added anything yet.</p>
-          <Link href="/menu">
-            <Button>Browse Menu</Button>
+        <div className="flex flex-col items-start gap-6 pb-24">
+          <div className="grid h-28 w-28 place-content-center rounded-full bg-field text-field-ink">
+            <ShoppingCart className="h-10 w-10" aria-hidden="true" />
+          </div>
+          <h2 className="section-title">The cart is empty.</h2>
+          <p className="section-lead">Start with the coffee or take a look at the brewing gear.</p>
+          <Link href="/menu" className="btn-pill">
+            Browse the shelf
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            {items.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="w-20 h-20 bg-stone-100 rounded-lg flex items-center justify-center shrink-0">
-                    <ShoppingCart className="h-8 w-8 text-stone-300" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-stone-800">{item.name}</h3>
-                    <p className="text-amber-800 font-bold">₱{item.price.toLocaleString()}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(item.id, -1)}>
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="w-8 text-center font-medium">{item.quantity}</span>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(item.id, 1)}>
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <p className="font-semibold text-stone-800 w-20 text-right">
-                    ₱{(item.price * item.quantity).toLocaleString()}
-                  </p>
-                  <Button variant="ghost" size="icon" className="text-red-500" onClick={() => removeItem(item.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
+        <div className="grid grid-cols-1 gap-12 pb-24 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
           <div>
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <h2 className="text-xl font-semibold text-stone-800">Order Summary</h2>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-stone-500">Subtotal</span>
-                    <span className="font-medium">₱{total.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-stone-500">Delivery</span>
-                    <span className="font-medium text-green-600">Free</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span className="text-amber-800">₱{total.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-4 border-t">
-                  <Input placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} />
-                  <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                  <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                  <Textarea placeholder="Delivery Address" value={address} onChange={(e) => setAddress(e.target.value)} />
-                  <Textarea placeholder="Order Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-                </div>
-
-                {error && <p className="text-sm text-red-500">{error}</p>}
-
-                <Button
-                  className="w-full bg-amber-700 hover:bg-amber-800"
-                  size="lg"
-                  onClick={handleCheckout}
-                  disabled={checkingOut}
+            <ul>
+              {items.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex flex-wrap items-center gap-4 py-6 sm:flex-nowrap sm:gap-6"
                 >
-                  {checkingOut ? "Processing..." : "Proceed to Checkout"}
-                </Button>
-              </CardContent>
-            </Card>
+                  <div className="grid h-16 w-16 shrink-0 place-content-center overflow-hidden rounded-full bg-surface">
+                    {item.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.image} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <svg viewBox="0 0 24 24" className="h-8 w-8 text-ink" aria-hidden="true">
+                        <ellipse cx="12" cy="12" rx="6" ry="9" transform="rotate(32 12 12)" fill="currentColor" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-[1.0625rem] font-medium">{item.name}</h2>
+                    <p className="mt-1 text-sm text-muted">₱{item.price.toLocaleString()} each</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateQty(item.id, -1)}
+                      className="grid h-9 w-9 place-content-center rounded-full bg-surface hover:bg-surface-strong"
+                      aria-label={`Reduce quantity of ${item.name}`}
+                    >
+                      <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                    <span className="w-7 text-center font-medium" aria-live="polite">
+                      {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => updateQty(item.id, 1)}
+                      className="grid h-9 w-9 place-content-center rounded-full bg-surface hover:bg-surface-strong"
+                      aria-label={`Increase quantity of ${item.name}`}
+                    >
+                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  <p className="w-24 text-right font-medium">₱{(item.price * item.quantity).toLocaleString()}</p>
+
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                    className="inline-flex items-center gap-1 text-sm text-[#7a2a1f] underline underline-offset-4"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
+
+          <aside className="h-fit bg-surface p-6 md:p-8">
+            <h2 className="font-display text-3xl leading-none">Order summary</h2>
+
+            <div className="mt-6 space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted">Subtotal</span>
+                <span>₱{total.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Delivery</span>
+                <span>Free</span>
+              </div>
+              <div className="flex items-baseline justify-between pt-3">
+                <span className="font-medium">Total</span>
+                <span className="font-display text-2xl leading-none">₱{total.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="mt-8 space-y-3">
+              <label className="block">
+                <span className="sr-only">Full name</span>
+                <Input placeholder="Full name" value={name} onChange={(event) => setName(event.target.value)} />
+              </label>
+              <label className="block">
+                <span className="sr-only">Email</span>
+                <Input
+                  placeholder="Email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="sr-only">Phone</span>
+                <Input placeholder="Phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
+              </label>
+              <label className="block">
+                <span className="sr-only">Delivery address</span>
+                <Textarea
+                  placeholder="Delivery address"
+                  value={address}
+                  onChange={(event) => setAddress(event.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="sr-only">Order notes (optional)</span>
+                <Textarea
+                  placeholder="Order notes (optional)"
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                />
+              </label>
+            </div>
+
+            {error && (
+              <p className="mt-4 text-sm text-[#7a2a1f]" role="alert">
+                {error}
+              </p>
+            )}
+
+            <Button className="mt-6 w-full" size="lg" onClick={handleCheckout} disabled={checkingOut}>
+              {checkingOut ? "Processing..." : "Proceed to checkout"}
+            </Button>
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              You will be sent to PayMongo to finish payment. Delivery details are kept with the order.
+            </p>
+          </aside>
         </div>
       )}
     </div>

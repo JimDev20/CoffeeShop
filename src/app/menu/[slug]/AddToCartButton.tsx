@@ -15,9 +15,15 @@ interface CartItem {
 
 export default function AddToCartButton({ product }: { product: ProductRow }) {
   const [added, setAdded] = useState(false);
+  const soldOut = product.stock <= 0;
 
   const handleAdd = () => {
-    const existing: CartItem[] = JSON.parse(localStorage.getItem("cart") || "[]");
+    let existing: CartItem[] = [];
+    try {
+      existing = JSON.parse(localStorage.getItem("cart") || "[]");
+    } catch {
+      existing = [];
+    }
     const found = existing.find((i) => i.id === product.id);
     if (found) {
       found.quantity += 1;
@@ -36,20 +42,20 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
   };
 
   return (
-    <Button
-      className="w-full bg-amber-700 hover:bg-amber-800"
-      size="lg"
-      onClick={handleAdd}
-    >
-      {added ? (
-        <>
-          <Check className="h-5 w-5 mr-2" /> Added to Cart
-        </>
-      ) : (
-        <>
-          <ShoppingCart className="h-5 w-5 mr-2" /> Add to Cart
-        </>
-      )}
+    <Button className="w-full md:w-auto" size="lg" onClick={handleAdd} disabled={soldOut}>
+      <span aria-live="polite">
+        {soldOut ? (
+          "Out of stock"
+        ) : added ? (
+          <span className="inline-flex items-center">
+            <Check className="mr-2 h-5 w-5" /> Added to cart
+          </span>
+        ) : (
+          <span className="inline-flex items-center">
+            <ShoppingCart className="mr-2 h-5 w-5" /> Add to cart
+          </span>
+        )}
+      </span>
     </Button>
   );
 }

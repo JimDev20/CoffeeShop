@@ -1,192 +1,201 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Coffee, Truck, HeadphonesIcon, Award } from "lucide-react";
+import type { CSSProperties } from "react";
+import HeroCrossfade from "@/components/hero-crossfade";
+import RoastCatalogue from "@/components/roast-catalogue";
 import { CategoryService } from "@/services/CategoryService";
 import { ProductService } from "@/services/ProductService";
+
+export const dynamic = "force-dynamic";
 
 const categoryService = new CategoryService();
 const productService = new ProductService();
 
-const features = [
-  { icon: Coffee, title: "Specialty Roasting", desc: "Small-batch roasted for peak flavor" },
-  { icon: Truck, title: "Fast Delivery", desc: "Delivered fresh to your doorstep" },
-  { icon: HeadphonesIcon, title: "24/7 Support", desc: "Always here when you need us" },
-  { icon: Award, title: "Premium Quality", desc: "Only the finest Arabica beans" },
-];
+const tiles = [
+  { word: "Ethiopia", caption: "Origin", tone: "olive" },
+  { word: "Colombia", caption: "Origin", tone: "surface" },
+  { photo: "/images/pour-over-gear.jpg", alt: "Pour-over dripper, kettle, grinder and scales on a wooden table.", caption: "Pour-over gear", tone: "photo" },
+  { word: "Brazil", caption: "Origin", tone: "olive" },
+  { word: "Light", caption: "Roast", tone: "surface" },
+  { word: "Medium", caption: "Roast", tone: "olive" },
+  { photo: "/images/pour-over-kettle.jpg", alt: "A kettle pouring water through a white dripper into a glass.", caption: "Brewing", tone: "photo" },
+  { word: "Dark", caption: "Roast", tone: "surface" },
+  { word: "200g", caption: "Weight", tone: "olive" },
+  { word: "250g", caption: "Weight", tone: "surface" },
+  { word: "Whole bean", caption: "Format", tone: "olive" },
+  { photo: "/images/cooling-tray.jpg", alt: "Roasted coffee beans moving across a cooling tray.", caption: "Roasting", tone: "photo" },
+] as const;
 
 export default async function HomePage() {
-  const [categories, featuredProducts] = await Promise.all([
+  const [categories, products] = await Promise.all([
     categoryService.getAllActive(),
-    productService.getFeatured(4),
+    productService.getAllAvailable(),
   ]);
+
+  const coffee = products.filter((product) => product.roast_level);
+  const minPrice = coffee.length > 0 ? Math.min(...coffee.map((product) => Number(product.price))) : 0;
+  const weights = Array.from(new Set(coffee.map((product) => product.weight).filter(Boolean)));
 
   return (
     <>
-      <section className="relative bg-gradient-to-br from-amber-900 via-amber-800 to-stone-900 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-950/50 to-stone-900/50 opacity-30" />
-        <div className="container mx-auto px-4 py-24 md:py-36 relative z-10">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-              Your Perfect <span className="text-amber-400">Cup</span> Starts Here
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero-card">
+          <div className="hero-disc" aria-hidden="true" />
+          <div className="hero-copy">
+            <h1 id="hero-title" className="hero-title">
+              Coffee with
+              <br />a source.
             </h1>
-            <p className="text-lg md:text-xl text-amber-100/80 mb-8 max-w-xl">
-              Freshly roasted specialty coffee, brewing equipment, and accessories. 
-              Crafted for those who appreciate the perfect cup.
+            <p className="hero-sentence">
+              Single-origin beans from Ethiopia, Colombia and Brazil, roasted in small batches and delivered
+              across the Philippines.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Link href="/menu">
-                <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-stone-900 font-semibold">
-                  Order Now
-                </Button>
+            <div className="hero-actions">
+              <Link href="/menu" className="btn-pill">
+                Shop the coffee
               </Link>
-              <Link href="#features">
-                <Button size="lg" variant="outline" className="border-amber-400 text-amber-300 hover:bg-amber-800/50">
-                  Learn More
-                </Button>
+              <Link href="#story" className="text-sm underline underline-offset-4 hover:decoration-2">
+                Read our story
               </Link>
+            </div>
+            <div className="hero-links">
+              <Link href="#menu">Menu</Link>
+              <Link href="#roast">Roast levels</Link>
+              <Link href="/orders">Track an order</Link>
             </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-stone-50 to-transparent" />
+
+        <div className="hero-media">
+          <HeroCrossfade />
+          <div className="hero-stamp">
+            <span>Small batch</span>
+            <strong>Est. 2024</strong>
+          </div>
+        </div>
       </section>
 
-      <section id="features" className="py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-stone-800 mb-4">
-            Why Choose <span className="text-amber-700">Brew & Co.</span>
+      <section id="menu" className="section-space" aria-labelledby="menu-title">
+        <div className="page-shell">
+          <RoastCatalogue products={products} categories={categories} />
+        </div>
+      </section>
+
+      <section id="story" className="story" aria-labelledby="story-title">
+        <div className="story-panel">
+          <h2 id="story-title" className="story-title" data-reveal>
+            Two seeds.
+            <br />
+            One cup.
           </h2>
-          <p className="text-center text-stone-500 mb-12 max-w-xl mx-auto">
-            We&apos;re passionate about bringing you the best coffee experience possible.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-            {features.map((f) => (
-              <div key={f.title} className="flex flex-col items-center text-center p-6">
-                <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mb-4">
-                  <f.icon className="h-7 w-7 text-amber-700" />
-                </div>
-                <h3 className="font-semibold text-stone-800 mb-2">{f.title}</h3>
-                <p className="text-sm text-stone-500">{f.desc}</p>
+
+          <div className="story-copy">
+            <div className="story-block" data-reveal style={{ "--reveal-delay": "80ms" } as CSSProperties}>
+              <h3>Sourced, not blended</h3>
+              <p>
+                The lots come from Ethiopia, Colombia and Brazil. Each one is sold on its own, so the origin on
+                the bag is the origin in the cup.
+              </p>
+            </div>
+            <div className="story-block" data-reveal style={{ "--reveal-delay": "160ms" } as CSSProperties}>
+              <h3>Roasted in small batches</h3>
+              <p>
+                We roast to order, pack at 200g and 250g, and list the roast level so you can choose a light,
+                medium or dark cup before you buy.
+              </p>
+            </div>
+            <div className="story-actions" data-reveal style={{ "--reveal-delay": "240ms" } as CSSProperties}>
+              <Link href="/menu" className="btn-pill btn-pill--light">
+                Shop the coffee
+              </Link>
+            </div>
+          </div>
+
+          <div className="story-photo" data-reveal style={{ "--reveal-delay": "120ms" } as CSSProperties}>
+            <img
+              src="/images/coffee-cherry.jpg"
+              width={1920}
+              height={1440}
+              alt="A split coffee cherry held in a hand, showing its two seeds."
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section id="roast" className="section-space" aria-labelledby="roast-title">
+        <div className="page-shell">
+          <div className="gallery-head">
+            <div>
+              <h2 id="roast-title" className="section-title" data-reveal>
+                What is on the bag.
+              </h2>
+              <p className="section-lead mt-6" data-reveal style={{ "--reveal-delay": "70ms" } as CSSProperties}>
+                Origin, roast and weight, written plainly on every bag. No house blend hiding the source.
+              </p>
+            </div>
+            <Link
+              href="/menu"
+              className="btn-pill btn-pill--ghost"
+              data-reveal
+              style={{ "--reveal-delay": "140ms" } as CSSProperties}
+            >
+              See every lot
+            </Link>
+          </div>
+
+          <div className="gallery-grid">
+            {tiles.map((tile, index) => (
+              <div
+                key={tile.caption + index}
+                className={`tile tile--${tile.tone}`}
+                data-reveal
+                style={{ "--reveal-delay": `${(index % 4) * 50}ms` } as CSSProperties}
+              >
+                {"photo" in tile ? (
+                  <div className="tile-photo">
+                    <img src={tile.photo} alt={tile.alt} loading="lazy" decoding="async" />
+                  </div>
+                ) : (
+                  <span className="tile-word">{tile.word}</span>
+                )}
+                <span className="tile-caption">{tile.caption}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-stone-800 mb-4">
-            Shop by <span className="text-amber-700">Category</span>
+      <section id="order" className="cta" aria-labelledby="order-title">
+        <div className="cta-media" data-reveal>
+          <div className="cta-photo">
+            <img
+              src="/images/cooling-tray.jpg"
+              width={1920}
+              height={2885}
+              alt="Roasted coffee beans moving across a cooling tray."
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </div>
+
+        <div className="cta-copy">
+          <h2 id="order-title" className="cta-title" data-reveal>
+            Take a bag home.
           </h2>
-          <p className="text-center text-stone-500 mb-12 max-w-xl mx-auto">
-            Find exactly what you&apos;re looking for.
+          <p data-reveal style={{ "--reveal-delay": "70ms" } as CSSProperties}>
+            Order one lot or build a shelf from all three origins. Every bag lists its origin, roast level and
+            weight before it leaves us.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map((cat) => (
-              <Link key={cat.slug} href={`/menu?category=${cat.slug}`}>
-                <Card className="group hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer overflow-hidden">
-                  <div className="aspect-square bg-stone-100 relative overflow-hidden">
-                    {cat.image ? (
-                      <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 bg-amber-100 flex items-center justify-center">
-                        <Coffee className="h-16 w-16 text-amber-700/40" />
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-4 text-center">
-                    <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors">
-                      {cat.name}
-                    </h3>
-                    {cat.description && (
-                      <p className="text-xs text-stone-500 mt-1">{cat.description}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {featuredProducts.length > 0 && (
-        <section className="py-16 md:py-24">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-center text-stone-800 mb-4">
-              Featured <span className="text-amber-700">Products</span>
-            </h2>
-            <p className="text-center text-stone-500 mb-12 max-w-xl mx-auto">
-              Our most popular picks, curated just for you.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <Link key={product.id} href={`/menu/${product.slug}`}>
-                  <Card className="group hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer overflow-hidden h-full">
-                    <div className="aspect-square bg-stone-100 relative overflow-hidden">
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="absolute inset-0 bg-amber-50 flex items-center justify-center">
-                          <Coffee className="h-16 w-16 text-amber-700/30" />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      {product.category_name && (
-                        <p className="text-xs text-amber-700 font-medium mb-1">{product.category_name}</p>
-                      )}
-                      <h3 className="font-semibold text-stone-800 group-hover:text-amber-700 transition-colors">
-                        {product.name}
-                      </h3>
-                      {product.description && (
-                        <p className="text-sm text-stone-500 mt-1 line-clamp-2">{product.description}</p>
-                      )}
-                      <p className="text-lg font-bold text-amber-800 mt-2">₱{Number(product.price).toLocaleString()}</p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-            <div className="text-center mt-8">
-              <Link href="/menu">
-                <Button variant="outline" className="border-amber-700 text-amber-700 hover:bg-amber-50">
-                  View All Products
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="py-16 md:py-24 bg-gradient-to-r from-amber-800 to-amber-700 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Order?</h2>
-          <p className="text-amber-100/80 mb-8 max-w-lg mx-auto">
-            Browse our full menu and place your order. Fresh coffee is just a few clicks away.
+          <p className="cta-fact" data-reveal style={{ "--reveal-delay": "140ms" } as CSSProperties}>
+            From ₱{minPrice.toLocaleString()}
+            {weights.length > 0 ? ` · ${weights.join(" and ")} bags` : ""}
           </p>
-          <Link href="/menu">
-            <Button size="lg" className="bg-white text-amber-800 hover:bg-amber-50 font-semibold">
-              View Full Menu
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-stone-800 mb-4">
-              The Coffee You&apos;ve Been Looking For Is Right Here
-            </h2>
-            <p className="text-stone-500 mb-6">
-              Quality in every bean, flavor in every cup. Every coffee is an excuse to be together. 
-              We&apos;re here to prepare fresh, delicious coffee for you.
-            </p>
-            <Link href="tel:+1234567890">
-              <Button variant="outline" className="border-amber-700 text-amber-700">
-                Call to Order: +1 (234) 567-890
-              </Button>
+          <div data-reveal style={{ "--reveal-delay": "210ms" } as CSSProperties}>
+            <Link href="/menu" className="btn-pill">
+              Order the coffee
             </Link>
           </div>
         </div>

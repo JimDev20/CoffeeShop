@@ -1,11 +1,9 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface OrderRow {
   id: number;
@@ -17,16 +15,17 @@ interface OrderRow {
   items: string;
 }
 
-const statusStyles: Record<string, "default" | "warning" | "success" | "secondary" | "destructive"> = {
-  pending: "warning",
-  confirmed: "default",
-  preparing: "default",
-  delivered: "success",
-  cancelled: "destructive",
+const statusTone: Record<string, string> = {
+  pending: "bg-tone-light",
+  confirmed: "bg-tone-medium",
+  preparing: "bg-tone-medium",
+  ready: "bg-field",
+  delivered: "bg-field",
+  cancelled: "bg-[#8c2f24]",
 };
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString();
+  return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
 function itemCount(items: string): number {
@@ -39,7 +38,7 @@ function itemCount(items: string): number {
 }
 
 export default function OrdersPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,9 +52,8 @@ export default function OrdersPage() {
       try {
         const res = await fetch("/api/orders");
         const data = await res.json();
-        const userOrders = data.orders?.filter(
-          (o: OrderRow) => o.customer_email === session?.user?.email
-        ) || [];
+        const userOrders =
+          data.orders?.filter((o: OrderRow) => o.customer_email === session?.user?.email) || [];
         if (active) setOrders(userOrders);
       } catch {
         if (active) setOrders([]);
@@ -63,44 +61,70 @@ export default function OrdersPage() {
         if (active) setLoading(false);
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [session]);
 
-  if (loading) {
-    return <div className="container mx-auto px-4 py-12 text-center text-stone-500">Loading orders...</div>;
+  if (status === "loading" || loading) {
+    return <div className="page-shell py-24 text-center text-muted">Loading orders...</div>;
+  }
+
+  if (!session) {
+    return (
+      <div className="page-shell">
+        <div className="page-head">
+          <h1 className="page-title">Your orders.</h1>
+          <p className="section-lead mt-6">Sign in to see what you have ordered and where it is.</p>
+        </div>
+        <Link href="/auth/login" className="btn-pill">
+          Sign in
+        </Link>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-stone-800 mb-8">My <span className="text-amber-700">Orders</span></h1>
+    <div className="page-shell">
+      <div className="page-head">
+        <h1 className="page-title">Your orders.</h1>
+        <p className="section-lead mt-6">Every order, from the first bag to the last.</p>
+      </div>
 
       {orders.length === 0 ? (
-        <p className="text-stone-400 text-center py-16">No orders found.</p>
+        <div className="flex flex-col items-start gap-6 pb-24">
+          <div className="grid h-28 w-28 place-content-center rounded-full bg-surface">
+            <Package className="h-10 w-10 text-muted" aria-hidden="true" />
+          </div>
+          <h2 className="section-title">No orders yet.</h2>
+          <p className="section-lead">The first one starts with a bag of coffee.</p>
+          <Link href="/menu" className="btn-pill">
+            Browse the shelf
+          </Link>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div>
           {orders.map((order) => (
-            <Link key={order.id} href={`/orders/${order.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                        <Package className="h-6 w-6 text-amber-700" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-stone-800">Order #{order.id}</p>
-                        <p className="text-sm text-stone-500">{formatDate(order.created_at)} &middot; {itemCount(order.items)} item(s)</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-amber-800">\u20B1{Number(order.total).toLocaleString()}</p>
-                      <Badge variant={statusStyles[order.status] || "secondary"} className="mt-1">
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <Link key={order.id} href={`/orders/${order.id}`} className="list-row">
+              <span className="grid h-14 w-14 place-content-center rounded-full bg-surface">
+                <Package className="h-6 w-6 text-muted" aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block text-[1.0625rem] font-medium">Order #{order.id}</span>
+                <span className="mt-1 block text-sm text-muted">
+                  {formatDate(order.created_at)} / {itemCount(order.items)} item(s)
+                </span>
+                <span className="mt-2 inline-flex items-center gap-2 text-[0.8125rem] capitalize">
+                  <span
+                    className={`h-2 w-2 rounded-full ${statusTone[order.status] || "bg-tone-medium"}`}
+                    aria-hidden="true"
+                  />
+                  {order.status}
+                </span>
+              </span>
+              <span className="text-right text-[1.0625rem] font-medium">
+                ₱{Number(order.total).toLocaleString()}
+              </span>
             </Link>
           ))}
         </div>

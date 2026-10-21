@@ -1,12 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Coffee } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -50,38 +48,56 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Coffee className="h-10 w-10 text-amber-700" />
-          </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
-          <p className="text-sm text-stone-500 mt-1">Join Brew & Co. today</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-stone-700">Full Name</label>
-            <Input placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-stone-700">Email</label>
-            <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-stone-700">Password</label>
-            <Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          <Button className="w-full bg-amber-700 hover:bg-amber-800" onClick={handleRegister} disabled={loading}>
-            {loading ? "Creating Account..." : "Create Account"}
+    <div className="page-shell">
+      <div className="mx-auto max-w-md py-16 md:py-24">
+        <div className="grid h-16 w-16 place-content-center rounded-full bg-field text-field-ink">
+          <span className="font-display text-xl leading-none">B&amp;Co</span>
+        </div>
+        <h1 className="page-title mt-8">Create an account.</h1>
+        <p className="section-lead mt-4">Keep your orders in one place and check out with fewer steps next time.</p>
+
+        <div className="mt-10 space-y-4">
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium">Full name</span>
+            <Input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium">Email</span>
+            <Input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium">Password</span>
+            <Input
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <span className="mt-1 block text-xs text-muted">At least 6 characters.</span>
+          </label>
+          {error && (
+            <p className="text-sm text-[#7a2a1f]" role="alert">
+              {error}
+            </p>
+          )}
+          <Button className="w-full" size="lg" onClick={handleRegister} disabled={loading}>
+            {loading ? "Creating account..." : "Create account"}
           </Button>
-          <p className="text-center text-sm text-stone-500">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="text-amber-700 hover:underline">Sign in</Link>
-          </p>
-        </CardContent>
-      </Card>
+        </div>
+
+        <p className="mt-6 text-sm text-muted">
+          Already have an account?{" "}
+          <Link href="/auth/login" className="text-ink underline underline-offset-4">
+            Sign in
+          </Link>
+          .
+        </p>
+      </div>
     </div>
   );
 }
