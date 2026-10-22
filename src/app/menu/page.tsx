@@ -206,7 +206,7 @@ function MenuContent() {
             >
               <ProductMark product={product} />
               <span className="min-w-0">
-                <span className="block text-[1.0625rem] font-medium leading-snug">{product.name}</span>
+                <span className="block text-lg font-medium leading-snug">{product.name}</span>
                 {product.description && (
                   <span className="mt-1 line-clamp-2 block text-sm leading-relaxed text-muted">
                     {product.description}
@@ -225,7 +225,7 @@ function MenuContent() {
                 </span>
               </span>
               <span className="text-right">
-                <span className="block text-[1.0625rem] font-medium">₱{Number(product.price).toLocaleString()}</span>
+                <span className="block text-lg font-medium">₱{Number(product.price).toLocaleString()}</span>
                 <span className="mt-2 inline-flex items-center gap-1 text-[0.8125rem] underline underline-offset-4">
                   View
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />

@@ -74,13 +74,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           </p>
           <h1 className="page-title mt-3">{product.name}</h1>
           {product.description && <p className="mt-6 text-lg leading-relaxed">{product.description}</p>}
-          <p className="mt-8 font-display text-4xl leading-none">₱{Number(product.price).toLocaleString()}</p>
+          <p className="mt-8 font-display text-[2.75rem] leading-none">₱{Number(product.price).toLocaleString()}</p>
 
           <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6">
             {facts.map(([label, value]) => (
               <div key={label}>
                 <dt className="text-[0.8125rem] text-muted">{label}</dt>
-                <dd className="mt-1 text-[1.0625rem]">{value}</dd>
+                <dd className="mt-1 text-lg">{value}</dd>
               </div>
             ))}
           </dl>

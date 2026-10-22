@@ -159,7 +159,7 @@ export default function OrderDetailPage() {
 
       <div className="mt-12 grid grid-cols-1 gap-12 pb-24 md:grid-cols-[1.2fr_0.8fr] md:gap-16">
         <div>
-          <h2 className="font-display text-3xl leading-none">Items</h2>
+          <h2 className="font-display text-[1.375rem] leading-none">Items</h2>
           <ul className="mt-4">
             {items.map((item, index) => (
               <li key={index} className="flex items-center gap-4 py-5">
@@ -184,12 +184,12 @@ export default function OrderDetailPage() {
           </ul>
           <div className="mt-4 flex items-baseline justify-between">
             <span className="font-medium">Total</span>
-            <span className="font-display text-3xl leading-none">₱{Number(order.total).toLocaleString()}</span>
+            <span className="font-display text-[1.375rem] leading-none">₱{Number(order.total).toLocaleString()}</span>
           </div>
         </div>
 
         <aside className="h-fit bg-surface p-6 md:p-8">
-          <h2 className="font-display text-2xl leading-none">Delivery</h2>
+          <h2 className="font-display text-[1.375rem] leading-none">Delivery</h2>
           <div className="mt-5 space-y-4 text-sm">
             <p className="flex items-start gap-3">
               <Mail className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />

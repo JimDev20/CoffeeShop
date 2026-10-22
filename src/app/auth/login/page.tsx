@@ -41,7 +41,7 @@ export default function LoginPage() {
     <div className="page-shell">
       <div className="mx-auto max-w-md py-16 md:py-24">
         <div className="grid h-16 w-16 place-content-center rounded-full bg-field text-field-ink">
-          <span className="font-display text-xl leading-none">B&amp;Co</span>
+          <span className="font-display text-[1.375rem] leading-none">B&amp;Co</span>
         </div>
         <h1 className="page-title mt-8">Welcome back.</h1>
         <p className="section-lead mt-4">Sign in to see your orders and keep your delivery details ready.</p>

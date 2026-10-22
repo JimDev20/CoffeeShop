@@ -110,7 +110,7 @@ export default function OrdersPage() {
                 <Package className="h-6 w-6 text-muted" aria-hidden="true" />
               </span>
               <span>
-                <span className="block text-[1.0625rem] font-medium">Order #{order.id}</span>
+                <span className="block text-lg font-medium">Order #{order.id}</span>
                 <span className="mt-1 block text-sm text-muted">
                   {formatDate(order.created_at)} / {itemCount(order.items)} item(s)
                 </span>
@@ -122,7 +122,7 @@ export default function OrdersPage() {
                   {order.status}
                 </span>
               </span>
-              <span className="text-right text-[1.0625rem] font-medium">
+              <span className="text-right text-lg font-medium">
                 ₱{Number(order.total).toLocaleString()}
               </span>
             </Link>

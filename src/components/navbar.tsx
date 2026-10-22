@@ -54,7 +54,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-bone">
       <nav className="page-shell flex items-center justify-between gap-4 py-3" aria-label="Main">
-        <Link href="/" className="flex items-center gap-2.5 font-display text-2xl leading-none tracking-tight">
+        <Link href="/" className="flex items-center gap-2.5 font-display text-[1.375rem] leading-none tracking-tight">
           <SeedMark />
           <span>Brew &amp; Co.</span>
         </Link>
@@ -123,17 +123,17 @@ export default function Navbar() {
       {isOpen && (
         <div id="mobile-menu" className="bg-surface md:hidden">
           <div className="page-shell flex flex-col gap-1 py-6">
-            <Link href="/menu" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+            <Link href="/menu" onClick={() => setIsOpen(false)} className="py-2 font-display text-[1.375rem]">
               Menu
             </Link>
-            <Link href="/#roast" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+            <Link href="/#roast" onClick={() => setIsOpen(false)} className="py-2 font-display text-[1.375rem]">
               Roast levels
             </Link>
-            <Link href="/#story" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+            <Link href="/#story" onClick={() => setIsOpen(false)} className="py-2 font-display text-[1.375rem]">
               Our story
             </Link>
             {session && (
-              <Link href="/orders" onClick={() => setIsOpen(false)} className="py-2 font-display text-2xl">
+              <Link href="/orders" onClick={() => setIsOpen(false)} className="py-2 font-display text-[1.375rem]">
                 Orders
               </Link>
             )}

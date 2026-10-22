@@ -174,7 +174,7 @@ export default function CartPage() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-[1.0625rem] font-medium">{item.name}</h2>
+                    <h2 className="text-lg font-medium">{item.name}</h2>
                     <p className="mt-1 text-sm text-muted">₱{item.price.toLocaleString()} each</p>
                   </div>
 
@@ -216,7 +216,7 @@ export default function CartPage() {
           </div>
 
           <aside className="h-fit bg-surface p-6 md:p-8">
-            <h2 className="font-display text-3xl leading-none">Order summary</h2>
+            <h2 className="font-display text-[1.375rem] leading-none">Order summary</h2>
 
             <div className="mt-6 space-y-3 text-sm">
               <div className="flex justify-between">
@@ -229,7 +229,7 @@ export default function CartPage() {
               </div>
               <div className="flex items-baseline justify-between pt-3">
                 <span className="font-medium">Total</span>
-                <span className="font-display text-2xl leading-none">₱{total.toLocaleString()}</span>
+                <span className="font-display text-[1.375rem] leading-none">₱{total.toLocaleString()}</span>
               </div>
             </div>
 
