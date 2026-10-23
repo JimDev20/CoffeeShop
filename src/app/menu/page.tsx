@@ -3,15 +3,12 @@
 import ProductMark from "@/components/product-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CategoryService, type CategoryRow } from "@/services/CategoryService";
-import { ProductService, type ProductRow } from "@/services/ProductService";
+import type { CategoryRow } from "@/services/CategoryService";
+import type { ProductRow } from "@/services/ProductService";
 import { ArrowUpRight, Search } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-
-const productService = new ProductService();
-const categoryService = new CategoryService();
 
 type SortOption = "name-asc" | "name-desc" | "price-asc" | "price-desc" | "newest";
 
@@ -67,8 +64,14 @@ function MenuContent() {
 
   useEffect(() => {
     Promise.all([
-      productService.getAllAvailable().catch(() => []),
-      categoryService.getAllActive().catch(() => []),
+      fetch("/api/products")
+        .then((r) => r.json())
+        .then((data) => (data.products || []).filter((p: ProductRow) => p.is_available))
+        .catch(() => [] as ProductRow[]),
+      fetch("/api/categories")
+        .then((r) => r.json())
+        .then((data) => (data.categories || []).filter((c: CategoryRow) => c.is_active))
+        .catch(() => [] as CategoryRow[]),
     ]).then(([prods, cats]) => {
       setProducts(prods);
       setCategories(cats);
