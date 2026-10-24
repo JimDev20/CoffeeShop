@@ -39,7 +39,19 @@ export const createOrderSchema = z.object({
     quantity: z.number().int().positive(),
     image: z.string().optional(),
   })).min(1, "At least one item is required"),
-  total: z.number().positive("Total must be positive"),
+  total: z.number().nonnegative(),
+  discount_code: z.string().trim().max(50).optional().nullable(),
+});
+
+export const createDiscountCodeSchema = z.object({
+  code: z.string().trim().min(2, "Code must be at least 2 characters").max(50)
+    .regex(/^[a-z0-9-]+$/i, "Code must be alphanumeric with hyphens"),
+  percent: z.number().int().min(1, "Percent must be at least 1").max(100, "Percent cannot exceed 100"),
+});
+
+export const updateDiscountCodeSchema = z.object({
+  id: z.number().int().positive(),
+  is_active: z.boolean(),
 });
 
 export const createCategorySchema = z.object({

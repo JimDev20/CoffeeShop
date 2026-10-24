@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { OrderService } from "@/services/OrderService";
+import { DiscountService } from "@/services/DiscountService";
 import { auth } from "@/lib/auth";
 import { createOrderSchema } from "@/lib/validations";
 
 const orderService = new OrderService();
+const discountService = new DiscountService();
 
 export async function GET() {
   try {
@@ -35,12 +37,33 @@ export async function POST(request: Request) {
     }
 
     const session = await auth();
-    const orderData = {
-      ...parsed.data,
-      user_id: session?.user?.id ? Number(session.user.id) : undefined,
-    };
+    const { discount_code: discountCodeInput, ...orderData } = parsed.data;
 
-    const order = await orderService.create(orderData);
+    const subtotal = parsed.data.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    let discountCode: string | null = null;
+    let discountAmount = 0;
+    if (discountCodeInput) {
+      const discount = await discountService.getActiveByCode(discountCodeInput);
+      if (!discount) {
+        return NextResponse.json({ error: "Invalid or inactive discount code" }, { status: 400 });
+      }
+      discountCode = discount.code;
+      discountAmount = Math.round(subtotal * discount.percent) / 100;
+    }
+
+    const total = Math.max(0, Math.round((subtotal - discountAmount) * 100) / 100);
+
+    const order = await orderService.create({
+      ...orderData,
+      user_id: session?.user?.id ? Number(session.user.id) : undefined,
+      total,
+      discount_code: discountCode,
+      discount_amount: discountAmount,
+    });
     return NextResponse.json({ order }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });

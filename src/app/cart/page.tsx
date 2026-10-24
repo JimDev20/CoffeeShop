@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Tag, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -24,6 +24,9 @@ export default function CartPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [discountInput, setDiscountInput] = useState("");
+  const [discount, setDiscount] = useState<{ code: string; percent: number } | null>(null);
+  const [applyingDiscount, setApplyingDiscount] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -56,6 +59,35 @@ export default function CartPage() {
   };
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const discountAmount = discount ? Math.round(total * discount.percent) / 100 : 0;
+  const finalTotal = Math.max(0, total - discountAmount);
+
+  const applyDiscount = async () => {
+    const code = discountInput.trim();
+    if (!code) return;
+    setApplyingDiscount(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/discounts?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid discount code");
+      }
+      setDiscount({ code: data.discount.code, percent: data.discount.percent });
+      setDiscountInput("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not apply discount code.");
+    } finally {
+      setApplyingDiscount(false);
+    }
+  };
+
+  const completeOrder = () => {
+    localStorage.removeItem("cart");
+    setItems([]);
+    setDiscount(null);
+    setDiscountInput("");
+  };
 
   const handleCheckout = async () => {
     if (!name || !email || !address) {
@@ -85,7 +117,8 @@ export default function CartPage() {
             price: item.price,
             quantity: item.quantity,
           })),
-          total,
+          total: finalTotal,
+          discount_code: discount?.code ?? null,
         }),
       });
 
@@ -96,12 +129,19 @@ export default function CartPage() {
 
       const orderData = await orderRes.json();
       const orderId = orderData.order?.id;
+      const orderTotal = Number(orderData.order?.total ?? finalTotal);
+
+      if (orderTotal <= 0) {
+        completeOrder();
+        alert("Order placed successfully with your discount!");
+        return;
+      }
 
       const payRes = await fetch("/api/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: total,
+          amount: orderTotal,
           description: `Coffee Shop Order - ${name}`,
           items: items.map((item) => ({ name: item.name, quantity: item.quantity, amount: item.price })),
           order_id: orderId,
@@ -112,12 +152,10 @@ export default function CartPage() {
       const payData = await payRes.json();
 
       if (payData.checkout_url) {
-        localStorage.removeItem("cart");
-        // eslint-disable-next-line react-hooks/immutability
+        completeOrder();
         window.location.href = payData.checkout_url;
       } else {
-        localStorage.removeItem("cart");
-        setItems([]);
+        completeOrder();
         alert("Order placed successfully! We will contact you for payment.");
       }
     } catch (e) {
@@ -223,17 +261,57 @@ export default function CartPage() {
                 <span className="text-muted">Subtotal</span>
                 <span>₱{total.toLocaleString()}</span>
               </div>
+              {discount && (
+                <div className="flex justify-between">
+                  <span className="text-muted">Discount ({discount.code})</span>
+                  <span>-₱{discountAmount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted">Delivery</span>
                 <span>Free</span>
               </div>
               <div className="flex items-baseline justify-between pt-3">
                 <span className="font-medium">Total</span>
-                <span className="font-display text-[1.375rem] leading-none">₱{total.toLocaleString()}</span>
+                <span className="font-display text-[1.375rem] leading-none">₱{finalTotal.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 border-t border-ink/10 pt-5">
+              {discount ? (
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="inline-flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-muted" aria-hidden="true" />
+                    {discount.code} applied ({discount.percent}% off)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDiscount(null)}
+                    className="underline underline-offset-4"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Discount code"
+                    value={discountInput}
+                    onChange={(event) => setDiscountInput(event.target.value)}
+                    aria-label="Discount code"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={applyDiscount}
+                    disabled={applyingDiscount || !discountInput.trim()}
+                  >
+                    {applyingDiscount ? "Checking..." : "Apply"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 space-y-3">
               <label className="block">
                 <span className="sr-only">Full name</span>
                 <Input placeholder="Full name" value={name} onChange={(event) => setName(event.target.value)} />

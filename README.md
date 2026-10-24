@@ -7,6 +7,7 @@ A full-stack coffee shop management system built with Next.js 16, Neon (PostgreS
 - Landing page with hero, features, categories, CTA
 - Product catalog with categories and add-to-cart
 - Cart and checkout with order form
+- Discount codes at checkout, managed from the admin dashboard
 - PayMongo payment integration (GCash, Card, Maya)
 - Order tracking (pending, confirmed, preparing, delivered)
 - Admin dashboard with revenue, orders, products, customers
@@ -82,6 +83,7 @@ src/
     admin/
       page.tsx          Dashboard
       products/         Manage products
+      discounts/        Manage discount codes
       orders/           Manage orders
       customers/        Manage customers
     api/
@@ -110,6 +112,8 @@ src/
 | GET | `/api/products` | List all products |
 | POST | `/api/products` | Create a product |
 | GET | `/api/categories` | List all categories |
+| GET | `/api/discounts?code=` | Validate a discount code |
+| GET/POST/PATCH/DELETE | `/api/discounts` | Manage discount codes (admin) |
 | GET | `/api/orders` | List all orders |
 | POST | `/api/orders` | Create an order |
 | GET | `/api/customers` | List all customers |

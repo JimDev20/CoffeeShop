@@ -28,7 +28,7 @@ function isTransientDbError(err: unknown): boolean {
     msg.includes("connect timeout") ||
     msg.includes("und_err_connect_timeout") ||
     err.name === "NeonDbError" ||
-    (err as any)?.code === "UND_ERR_CONNECT_TIMEOUT"
+    (err as { code?: string })?.code === "UND_ERR_CONNECT_TIMEOUT"
   );
 }
 

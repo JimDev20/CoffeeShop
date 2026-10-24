@@ -25,6 +25,7 @@ const adminLinks = [
   { href: "/admin/products", label: "Manage Products", desc: "Add, edit, or remove products" },
   { href: "/admin/orders", label: "Manage Orders", desc: "View and update order status" },
   { href: "/admin/customers", label: "Manage Customers", desc: "View customer information" },
+  { href: "/admin/discounts", label: "Manage Discounts", desc: "Create and pause promo codes" },
 ];
 
 export default async function AdminPage() {

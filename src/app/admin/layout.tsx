@@ -1,12 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Coffee, LayoutDashboard, Package, ShoppingCart, Users, LogOut, FolderTree } from "lucide-react";
+import { Coffee, LayoutDashboard, Package, ShoppingCart, Users, LogOut, FolderTree, Tag } from "lucide-react";
 
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
+  { href: "/admin/discounts", label: "Discounts", icon: Tag },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/customers", label: "Customers", icon: Users },
 ];

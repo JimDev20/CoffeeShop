@@ -49,6 +49,14 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const discountCodes = pgTable("discount_codes", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 50 }).unique().notNull(),
+  percent: integer("percent").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -58,6 +66,8 @@ export const orders = pgTable("orders", {
   shippingAddress: text("shipping_address").notNull(),
   notes: text("notes"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  discountCode: varchar("discount_code", { length: 50 }),
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default("0").notNull(),
   status: orderStatusEnum("status").default("pending").notNull(),
   paymentStatus: paymentStatusEnum("payment_status").default("unpaid").notNull(),
   paymentId: varchar("payment_id", { length: 255 }),

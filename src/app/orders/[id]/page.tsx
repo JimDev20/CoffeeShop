@@ -25,6 +25,8 @@ interface Order {
   shipping_address: string;
   notes: string | null;
   total: string;
+  discount_code: string | null;
+  discount_amount: string;
   status: string;
   payment_status: string;
   items: string;
@@ -111,6 +113,8 @@ export default function OrderDetailPage() {
 
   const items = parseItems(order.items);
   const currentStep = statusSteps.indexOf(order.status);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const discountAmount = Number(order.discount_amount || 0);
 
   return (
     <div className="page-shell">
@@ -182,9 +186,23 @@ export default function OrderDetailPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 flex items-baseline justify-between">
-            <span className="font-medium">Total</span>
-            <span className="font-display text-[1.375rem] leading-none">₱{Number(order.total).toLocaleString()}</span>
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="flex items-baseline justify-between">
+              <span className="text-muted">Subtotal</span>
+              <span>₱{subtotal.toLocaleString()}</span>
+            </div>
+            {discountAmount > 0 && (
+              <div className="flex items-baseline justify-between">
+                <span className="text-muted">
+                  Discount{order.discount_code ? ` (${order.discount_code})` : ""}
+                </span>
+                <span>-₱{discountAmount.toLocaleString()}</span>
+              </div>
+            )}
+            <div className="flex items-baseline justify-between pt-2">
+              <span className="font-medium">Total</span>
+              <span className="font-display text-[1.375rem] leading-none">₱{Number(order.total).toLocaleString()}</span>
+            </div>
           </div>
         </div>
 

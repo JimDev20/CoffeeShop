@@ -67,6 +67,14 @@ async function seed() {
   }
   console.log("Products created");
 
+  // Create discount codes
+  await sql`
+    INSERT INTO discount_codes (code, percent)
+    VALUES ('WELCOME10', 10), ('BREW20', 20)
+    ON CONFLICT (code) DO NOTHING
+  `;
+  console.log("Discount codes created");
+
   console.log("Seed complete!");
   process.exit(0);
 }

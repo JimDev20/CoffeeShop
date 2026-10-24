@@ -8,6 +8,8 @@ export interface OrderRow {
   shipping_address: string;
   notes: string | null;
   total: string;
+  discount_code: string | null;
+  discount_amount: string;
   status: string;
   payment_status: string;
   items: string;
@@ -25,6 +27,8 @@ export interface CreateOrderDTO {
   notes?: string | null;
   items: unknown[];
   total: number;
+  discount_code?: string | null;
+  discount_amount?: number;
   user_id?: number;
 }
 
@@ -89,8 +93,8 @@ export class OrderService extends BaseService {
 
   async create(data: CreateOrderDTO): Promise<OrderRow> {
     const [order] = await this.db`
-      INSERT INTO orders (customer_name, customer_email, customer_phone, shipping_address, notes, total, items, user_id, status, payment_status)
-      VALUES (${data.customer_name}, ${data.customer_email}, ${data.customer_phone ?? null}, ${data.shipping_address}, ${data.notes ?? null}, ${data.total}, ${JSON.stringify(data.items)}, ${data.user_id ?? null}, 'pending', 'unpaid')
+      INSERT INTO orders (customer_name, customer_email, customer_phone, shipping_address, notes, total, discount_code, discount_amount, items, user_id, status, payment_status)
+      VALUES (${data.customer_name}, ${data.customer_email}, ${data.customer_phone ?? null}, ${data.shipping_address}, ${data.notes ?? null}, ${data.total}, ${data.discount_code ?? null}, ${data.discount_amount ?? 0}, ${JSON.stringify(data.items)}, ${data.user_id ?? null}, 'pending', 'unpaid')
       RETURNING *
     `;
     return order as unknown as OrderRow;
