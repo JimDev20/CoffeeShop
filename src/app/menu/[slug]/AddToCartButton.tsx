@@ -15,6 +15,7 @@ interface CartItem {
 
 export default function AddToCartButton({ product }: { product: ProductRow }) {
   const [added, setAdded] = useState(false);
+  const [atLimit, setAtLimit] = useState(false);
   const soldOut = product.stock <= 0;
 
   const handleAdd = () => {
@@ -25,6 +26,11 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
       existing = [];
     }
     const found = existing.find((i) => i.id === product.id);
+    if (found && found.quantity >= product.stock) {
+      setAtLimit(true);
+      setTimeout(() => setAtLimit(false), 2000);
+      return;
+    }
     if (found) {
       found.quantity += 1;
     } else {
@@ -37,6 +43,7 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
       });
     }
     localStorage.setItem("cart", JSON.stringify(existing));
+    setAtLimit(false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -50,6 +57,8 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
           <span className="inline-flex items-center">
             <Check className="mr-2 h-5 w-5" /> Added to cart
           </span>
+        ) : atLimit ? (
+          `Only ${product.stock} in stock`
         ) : (
           <span className="inline-flex items-center">
             <ShoppingCart className="mr-2 h-5 w-5" /> Add to cart

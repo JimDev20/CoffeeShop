@@ -222,6 +222,7 @@ function MenuContent() {
                     product.roast_level,
                     product.weight,
                     product.is_featured ? "Featured" : null,
+                    product.stock <= 0 ? "Sold out" : null,
                   ]
                     .filter(Boolean)
                     .join(" / ")}

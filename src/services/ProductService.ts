@@ -101,6 +101,22 @@ export class ProductService extends BaseService {
     return true;
   }
 
+  async decrementStock(id: number, quantity: number): Promise<boolean> {
+    const rows = await this.db`
+      UPDATE products SET stock = stock - ${quantity}, updated_at = NOW()
+      WHERE id = ${id} AND stock >= ${quantity}
+      RETURNING id
+    `;
+    return rows.length > 0;
+  }
+
+  async restoreStock(id: number, quantity: number): Promise<void> {
+    await this.db`
+      UPDATE products SET stock = stock + ${quantity}, updated_at = NOW()
+      WHERE id = ${id}
+    `;
+  }
+
   async getAvailableCount(): Promise<number> {
     const [row] = await this.db`SELECT COUNT(*) as count FROM products WHERE is_available = true`;
     return Number((row as { count: number }).count);
