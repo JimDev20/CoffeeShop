@@ -34,6 +34,23 @@ interface Order {
   updated_at: string;
 }
 
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string | null;
+}
+
+interface ShelfProduct {
+  id: number;
+  name: string;
+  price: number | string;
+  image: string | null;
+  stock: number;
+  is_available: boolean;
+}
+
 const statusTone: Record<string, string> = {
   pending: "bg-tone-light",
   confirmed: "bg-tone-medium",
@@ -72,6 +89,8 @@ export default function OrderDetailPage() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reordering, setReordering] = useState(false);
+  const [reorderError, setReorderError] = useState("");
 
   useEffect(() => {
     if (!session) return;
@@ -115,6 +134,68 @@ export default function OrderDetailPage() {
   const currentStep = statusSteps.indexOf(order.status);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discountAmount = Number(order.discount_amount || 0);
+
+  const handleReorder = async () => {
+    setReordering(true);
+    setReorderError("");
+    try {
+      const res = await fetch("/api/products");
+      if (!res.ok) throw new Error("Could not load the shelf.");
+      const data = await res.json();
+      const products: ShelfProduct[] = data.products || [];
+
+      let cart: CartItem[] = [];
+      try {
+        cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      } catch {
+        cart = [];
+      }
+
+      let added = 0;
+      let skipped = false;
+      for (const item of items) {
+        const productId = item.productId ?? item.id;
+        const product = products.find((entry) => entry.id === productId);
+        if (!product || !product.is_available || product.stock <= 0) {
+          skipped = true;
+          continue;
+        }
+        const existing = cart.find((entry) => entry.id === product.id);
+        const inCart = existing?.quantity ?? 0;
+        const quantity = Math.min(item.quantity, product.stock - inCart);
+        if (quantity <= 0) {
+          skipped = true;
+          continue;
+        }
+        if (quantity < item.quantity) skipped = true;
+        if (existing) {
+          existing.quantity += quantity;
+        } else {
+          cart.push({
+            id: product.id,
+            name: product.name,
+            price: Number(product.price),
+            quantity,
+            image: product.image,
+          });
+        }
+        added += quantity;
+      }
+
+      if (added === 0) {
+        setReorderError("Those items are no longer available.");
+        return;
+      }
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+      if (skipped) alert("Some items were unavailable and were left out.");
+      router.push("/cart");
+    } catch (e) {
+      setReorderError(e instanceof Error ? e.message : "Could not add those items.");
+    } finally {
+      setReordering(false);
+    }
+  };
 
   return (
     <div className="page-shell">
@@ -230,9 +311,14 @@ export default function OrderDetailPage() {
               </p>
             )}
           </div>
-          <Button variant="outline" className="mt-8 w-full" onClick={() => router.push("/menu")}>
-            Order again
+          <Button variant="outline" className="mt-8 w-full" onClick={handleReorder} disabled={reordering}>
+            {reordering ? "Adding to cart..." : "Order again"}
           </Button>
+          {reorderError && (
+            <p className="mt-3 text-sm text-[#7a2a1f]" role="alert">
+              {reorderError}
+            </p>
+          )}
         </aside>
       </div>
     </div>
