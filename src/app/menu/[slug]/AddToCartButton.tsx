@@ -1,17 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { addToCart } from "@/lib/cart";
 import { ShoppingCart, Check, Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { ProductRow } from "@/services/ProductService";
-
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string | null;
-}
 
 export default function AddToCartButton({ product }: { product: ProductRow }) {
   const [added, setAdded] = useState(false);
@@ -20,33 +13,13 @@ export default function AddToCartButton({ product }: { product: ProductRow }) {
   const soldOut = product.stock <= 0;
 
   const handleAdd = () => {
-    let existing: CartItem[] = [];
-    try {
-      existing = JSON.parse(localStorage.getItem("cart") || "[]");
-    } catch {
-      existing = [];
-    }
-    const found = existing.find((i) => i.id === product.id);
-    const available = product.stock - (found?.quantity ?? 0);
-    if (available <= 0) {
+    const { added: count } = addToCart(product, quantity);
+    if (count === 0) {
       setAtLimit(true);
       setTimeout(() => setAtLimit(false), 2000);
       return;
     }
 
-    const toAdd = Math.min(quantity, available);
-    if (found) {
-      found.quantity += toAdd;
-    } else {
-      existing.push({
-        id: product.id,
-        name: product.name,
-        price: Number(product.price),
-        quantity: toAdd,
-        image: product.image,
-      });
-    }
-    localStorage.setItem("cart", JSON.stringify(existing));
     setAtLimit(false);
     setQuantity(1);
     setAdded(true);

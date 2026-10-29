@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CategoryRow } from "@/services/CategoryService";
 import type { ProductRow } from "@/services/ProductService";
-import { ArrowUpRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import QuickAddButton from "./QuickAddButton";
 
 type SortOption = "name-asc" | "name-desc" | "price-asc" | "price-desc" | "newest";
 
@@ -200,15 +201,14 @@ function MenuContent() {
       ) : (
         <div className="mt-2 grid grid-cols-1 gap-x-16 lg:grid-cols-2">
           {filteredProducts.map((product, index) => (
-            <Link
+            <div
               key={product.id}
-              href={`/menu/${product.slug}`}
               className="list-row"
               data-reveal
               style={{ "--reveal-delay": `${(index % 4) * 50}ms` } as CSSProperties}
             >
               <ProductMark product={product} />
-              <span className="min-w-0">
+              <Link href={`/menu/${product.slug}`} className="min-w-0">
                 <span className="block text-lg font-medium leading-snug">{product.name}</span>
                 {product.description && (
                   <span className="mt-1 line-clamp-2 block text-sm leading-relaxed text-muted">
@@ -227,15 +227,12 @@ function MenuContent() {
                     .filter(Boolean)
                     .join(" / ")}
                 </span>
+              </Link>
+              <span className="flex flex-col items-end gap-2 text-right">
+                <span className="text-lg font-medium">₱{Number(product.price).toLocaleString()}</span>
+                <QuickAddButton product={product} />
               </span>
-              <span className="text-right">
-                <span className="block text-lg font-medium">₱{Number(product.price).toLocaleString()}</span>
-                <span className="mt-2 inline-flex items-center gap-1 text-[0.8125rem] underline underline-offset-4">
-                  View
-                  <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </span>
-              </span>
-            </Link>
+            </div>
           ))}
         </div>
       )}
