@@ -1,6 +1,7 @@
 "use client";
 
-import { Package } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Package, Search } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -39,6 +40,21 @@ function matchesFilter(status: string, filter: StatusFilter): boolean {
   return status === filter;
 }
 
+function matchesSearch(order: OrderRow, query: string): boolean {
+  const term = query.trim().toLowerCase();
+  if (!term) return true;
+  if (String(order.id).includes(term)) return true;
+  try {
+    const parsed = JSON.parse(order.items);
+    return (
+      Array.isArray(parsed) &&
+      parsed.some((item) => String(item?.name || "").toLowerCase().includes(term))
+    );
+  } catch {
+    return false;
+  }
+}
+
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
@@ -57,6 +73,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (!session?.user?.email) {
@@ -100,9 +117,13 @@ export default function OrdersPage() {
     );
   }
 
-  const visibleOrders = orders.filter((order) => matchesFilter(order.status, statusFilter));
+  const searchedOrders = orders.filter((order) => matchesSearch(order, query));
+  const visibleOrders = searchedOrders.filter((order) => matchesFilter(order.status, statusFilter));
   const filterCounts = Object.fromEntries(
-    statusFilters.map(({ value }) => [value, orders.filter((order) => matchesFilter(order.status, value)).length])
+    statusFilters.map(({ value }) => [
+      value,
+      searchedOrders.filter((order) => matchesFilter(order.status, value)).length,
+    ])
   ) as Record<StatusFilter, number>;
 
   return (
@@ -125,31 +146,55 @@ export default function OrdersPage() {
         </div>
       ) : (
         <>
-          <div className="-mt-2 flex flex-wrap gap-2 pb-10" role="group" aria-label="Filter orders by status">
-            {statusFilters.map(({ value, label }) => {
-              const selected = statusFilter === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setStatusFilter(value)}
-                  aria-pressed={selected}
-                  className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-sm transition-colors ${
-                    selected ? "bg-field text-field-ink" : "bg-surface text-ink hover:bg-surface-strong"
-                  }`}
-                >
-                  {label}
-                  <span className={`text-xs ${selected ? "opacity-70" : "text-muted"}`}>{filterCounts[value]}</span>
-                </button>
-              );
-            })}
+          <div className="-mt-2 flex flex-col gap-4 pb-10">
+            <div className="relative max-w-sm">
+              <Search
+                className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                aria-hidden="true"
+              />
+              <Input
+                placeholder="Search order number or item"
+                aria-label="Search orders"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className="pl-11"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filter orders by status">
+              {statusFilters.map(({ value, label }) => {
+                const selected = statusFilter === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setStatusFilter(value)}
+                    aria-pressed={selected}
+                    className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-sm transition-colors ${
+                      selected ? "bg-field text-field-ink" : "bg-surface text-ink hover:bg-surface-strong"
+                    }`}
+                  >
+                    {label}
+                    <span className={`text-xs ${selected ? "opacity-70" : "text-muted"}`}>{filterCounts[value]}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {visibleOrders.length === 0 ? (
             <div className="flex flex-col items-start gap-4 pb-24">
-              <h2 className="section-title">Nothing in this view.</h2>
-              <p className="section-lead">Try another status or bring every order back.</p>
-              <button type="button" className="btn-pill" onClick={() => setStatusFilter("all")}>
+              <h2 className="section-title">{query ? "No matching orders." : "Nothing in this view."}</h2>
+              <p className="section-lead">
+                {query ? "Try a different order number or item name." : "Try another status or bring every order back."}
+              </p>
+              <button
+                type="button"
+                className="btn-pill"
+                onClick={() => {
+                  setStatusFilter("all");
+                  setQuery("");
+                }}
+              >
                 Show all orders
               </button>
             </div>
