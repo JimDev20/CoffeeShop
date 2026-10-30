@@ -3,6 +3,7 @@
 import ProductMark from "@/components/product-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { readRecentlyViewed } from "@/lib/recently-viewed";
 import type { CategoryRow } from "@/services/CategoryService";
 import type { ProductRow } from "@/services/ProductService";
 import { Search } from "lucide-react";
@@ -62,6 +63,7 @@ function MenuContent() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState<SortOption>("name-asc");
+  const [recentIds, setRecentIds] = useState<number[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -76,6 +78,7 @@ function MenuContent() {
     ]).then(([prods, cats]) => {
       setProducts(prods);
       setCategories(cats);
+      setRecentIds(readRecentlyViewed());
       setLoading(false);
     });
   }, []);
@@ -120,6 +123,13 @@ function MenuContent() {
 
     return result;
   }, [products, search, selectedCategory, sortBy, categories]);
+
+  const recentProducts = useMemo(() => {
+    const byId = new Map(products.map((product) => [product.id, product]));
+    return recentIds
+      .map((id) => byId.get(id))
+      .filter((product): product is ProductRow => Boolean(product));
+  }, [products, recentIds]);
 
   const hasFilters = Boolean(search || selectedCategory || sortBy !== "name-asc");
 
@@ -189,6 +199,29 @@ function MenuContent() {
       <p className="mt-8 text-sm text-muted" aria-live="polite">
         {filteredProducts.length} {filteredProducts.length === 1 ? "item" : "items"}
       </p>
+
+      {!hasFilters && recentProducts.length > 0 && (
+        <section className="mt-10" aria-labelledby="recently-viewed-title">
+          <h2 id="recently-viewed-title" className="font-display text-[1.375rem] leading-none">
+            Recently viewed
+          </h2>
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+            {recentProducts.map((product) => (
+              <Link
+                key={product.id}
+                href={`/menu/${product.slug}`}
+                className="flex w-[240px] shrink-0 items-center gap-3 rounded-full bg-surface py-2 pl-2 pr-5 transition-colors hover:bg-surface-strong"
+              >
+                <ProductMark product={product} size={44} />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">{product.name}</span>
+                  <span className="mt-0.5 block text-sm text-muted">₱{Number(product.price).toLocaleString()}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {filteredProducts.length === 0 ? (
         <div className="py-20">

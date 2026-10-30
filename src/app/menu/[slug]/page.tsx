@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
+import TrackView from "./TrackView";
 import { roastInk, roastTone } from "@/lib/catalogue";
 import { ProductService } from "@/services/ProductService";
 
@@ -28,6 +29,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="page-shell">
+      <TrackView productId={product.id} />
       <div className="py-8">
         <Link href="/menu" className="inline-flex items-center gap-2 text-sm underline underline-offset-4">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
